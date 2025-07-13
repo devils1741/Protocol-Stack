@@ -46,7 +46,7 @@ spdlog::level::level_enum log_level_from_string(const string &logLevel)
  * @param logFilePath 日志存储路径+名称
  * @param logLevel 日志等级
  */
-void init_logger(const string &logFilePath = "../log/log.txt", const string &logLevel = "info")
+void init_logger(const std::string &logFilePath = "../log/log.txt", const std::string &logLevel = "debug")
 {
     // 初始化线程池（全局操作，确保只调用一次）
     static bool initialized = false;
@@ -59,14 +59,15 @@ void init_logger(const string &logFilePath = "../log/log.txt", const string &log
     // 创建异步日志
     auto logger = spdlog::daily_logger_mt<spdlog::async_factory>("global", logFilePath, 0, 0);
 
+    // 设置日志格式
+    logger->set_pattern("[%n] [%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [%s %!:%#]  %v");
+
     // 设置默认日志器
     spdlog::set_default_logger(logger);
 
     // 设置日志级别
-    spdlog::set_level(log_level_from_string(logLevel));
+    spdlog::set_level(spdlog::level::from_str(logLevel));
 
-    // 设置日志格式
-    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [%t] [File: %s] [Line: %n] %v");
     // 设置自动刷新级别
     spdlog::flush_on(spdlog::level::info);
 }

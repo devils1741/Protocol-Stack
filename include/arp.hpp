@@ -2,7 +2,15 @@
 #define __ARP_H__
 
 #include <rte_ether.h>
-#include 
+#include <list>
+
+using std::list;
+
+struct arp
+{
+    /* data */
+};
+
 
 
 

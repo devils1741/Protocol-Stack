@@ -1,6 +1,5 @@
 #include <iostream>
-#include "../include/logger.hpp"
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+#include "logger.hpp"
 using std::string;
 
 
@@ -9,5 +8,5 @@ using std::string;
 int main(int argc, char **argv)
 {
     init_logger();
-    spdlog::info("second hello spdlog!");
+    SPDLOG_INFO("The APP start!");
 }
