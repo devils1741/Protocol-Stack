@@ -39,3 +39,12 @@
 
 # debug information files
 *.dwo
+
+# compiler files
+build
+
+# visual code configuration files
+.vscode
+
+# logger
+log_*
