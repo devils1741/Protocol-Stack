@@ -17,7 +17,9 @@ protected:
     }
 };
 
-// 测试 ArpHeader 的相等性操作符
+/**
+ * @brief 测试 ArpHeader 的相等性操作符
+ */
 TEST_F(ArpTest, ArpHeaderEquality)
 {
     ArpHeader header1 = {
@@ -83,14 +85,18 @@ TEST_F(ArpTest, ArpHeaderEquality)
     EXPECT_FALSE(header1 == header3);
 }
 
-// 测试 ArpTable 的单例特性
+/**
+ * @brief 测试 ArpTable 的单例特性
+ */
 TEST_F(ArpTest, ArpTableSingleton)
 {
     // 检查两次调用 GetInstance 是否返回相同的实例
     EXPECT_EQ(&ArpTable::GetInstance(), &ArpTable::GetInstance());
 }
 
-// 测试 ArpTable 的 push_back 和 remove 操作
+/**
+ * @brief 测试 ArpTable 的 push_back 和 remove 操作
+ */
 TEST_F(ArpTest, ArpTablePushRemove)
 {
     ArpHeader header = {
@@ -114,7 +120,11 @@ TEST_F(ArpTest, ArpTablePushRemove)
     EXPECT_EQ(ArpTable::GetInstance().remove(header), -1);
 }
 
-// 测试 ArpTable 的线程安全性（基本测试）
+/**
+ * @brief 测试 ArpTable 的线程安全性
+ * 没有显式断言，因为主要测试是否会发生崩溃
+ * 互斥锁应该可以防止数据竞争
+ */
 TEST_F(ArpTest, ArpTableThreadSafety)
 {
     ArpHeader header = {
@@ -150,9 +160,6 @@ TEST_F(ArpTest, ArpTableThreadSafety)
 
     t1.join();
     t2.join();
-
-    // 没有显式断言，因为我们主要测试是否会发生崩溃
-    // 互斥锁应该可以防止数据竞争
 }
 
 // 主函数，用于运行测试
