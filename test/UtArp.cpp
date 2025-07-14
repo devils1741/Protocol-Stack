@@ -2,13 +2,17 @@
 #include "arp.hpp"
 #include <thread>
 
-// ARP 测试的测试用具
+/**
+ * @brief  ARP 测试的测试类
+ */
 class ArpTest : public ::testing::Test
 {
 protected:
+    /**
+     * @brief 在每个测试之前清空 ARP 表
+     */
     void SetUp() override
     {
-        // 在每个测试之前清空 ARP 表
         ArpTable::GetInstance().clear();
     }
 };
