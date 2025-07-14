@@ -122,5 +122,6 @@ private:
 };
 
 list<ArpHeader> *ArpTable::_list = nullptr;
+mutex ArpTable::_mutex;
 
 #endif

@@ -5,8 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # project header
-include_directories(${CMAKE_SOURCE_DIR}/include)
-message(STATUS ${CMAKE_SOURCE_DIR})
+include_directories(../include)
 
 # GoogleTest
 find_package(GTest REQUIRED)
@@ -23,6 +22,7 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(DPDK REQUIRED libdpdk)
 
 
+include_directories(arp.hpp)
 add_executable(UtArp
         UtArp.cpp
 )
