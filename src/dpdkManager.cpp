@@ -1,9 +1,16 @@
 #include "dpdkManager.hpp"
 
-DPDKManager::DPDKManager(rte_mempool &mbufPool)
+DPDKManager::DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id) : _name(name), _NUM_MBUFS(NUM_MBUFS), _socket_id(socket_id)
 {
     SPDLOG_INFO("DPDKManager constructor called");
-    _mbufPool = &mbufPool;
+
+    _mbufPool = rte_pktmbuf_pool_create(_name.c_str(), _NUM_MBUFS,
+                                        0, 0, RTE_MBUF_DEFAULT_BUF_SIZE, _socket_id);
+    if (_mbufPool == NULL)
+    {
+        SPDLOG_ERROR("Could not create mbuf pool");
+        rte_exit(EXIT_FAILURE, "Could not create mbuf pool\n");
+    }
 }
 
 DPDKManager::~DPDKManager()
@@ -16,11 +23,9 @@ DPDKManager::~DPDKManager()
     }
 }
 
-int DPDKManager::setMemPool(rte_mempool &mbufPool)
+rte_mempool *DPDKManager::getMbufPool() const
 {
-    SPDLOG_INFO("Setting memory pool for DPDKManager");
-    _mbufPool = &mbufPool;
-    return 0;
+    return _mbufPool;
 }
 
 int DPDKManager::initPort(int portID, rte_eth_conf port_conf_default)

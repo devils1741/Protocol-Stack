@@ -29,15 +29,15 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    struct rte_mempool *mbuf_pool = rte_pktmbuf_pool_create("mbuf pool", NUM_MBUFS,
-                                                            0, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
-    if (mbuf_pool == NULL)
-    {
-        SPDLOG_ERROR("Could not create mbuf pool");
-        rte_exit(EXIT_FAILURE, "Could not create mbuf pool\n");
-    }
+    // struct rte_mempool *mbuf_pool = rte_pktmbuf_pool_create("mbuf pool", NUM_MBUFS,
+    //                                                         0, 0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
+    // if (mbuf_pool == NULL)
+    // {
+    //     SPDLOG_ERROR("Could not create mbuf pool");
+    //     rte_exit(EXIT_FAILURE, "Could not create mbuf pool\n");
+    // }
 
-    std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>(*mbuf_pool);
+    std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>("mbuf pool", NUM_MBUFS, rte_socket_id());
     if (dpdkManager->initPort(G_DPDK_PORT_ID, port_conf_default) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK port");

@@ -11,9 +11,9 @@ using std::string;
 class DPDKManager
 {
 public:
-    DPDKManager(rte_mempool &mbufPool);
+    DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id);
     ~DPDKManager();
-    int setMemPool(rte_mempool &mbufPool);
+    rte_mempool *getMbufPool() const;
     int initPort(int portID, rte_eth_conf port_conf_default);
 
 private:
@@ -21,7 +21,12 @@ private:
     DPDKManager(DPDKManager &&) = delete;
     DPDKManager &operator=(const DPDKManager &) = delete;
     DPDKManager &operator=(DPDKManager &&) = delete;
+
+private:
     struct rte_mempool *_mbufPool = nullptr;
+    string _name;
+    unsigned _NUM_MBUFS;
+    int _socket_id;
 };
 
 #endif
