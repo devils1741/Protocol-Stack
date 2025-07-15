@@ -30,6 +30,7 @@ rte_mempool *DPDKManager::getMbufPool() const
 
 int DPDKManager::initPort(int portID, rte_eth_conf port_conf_default)
 {
+    SPDLOG_INFO("DPDK Port Initialization started for port ID: {}", portID);
     uint16_t nb_sys_ports = rte_eth_dev_count_avail(); //
     if (nb_sys_ports == 0)
     {
