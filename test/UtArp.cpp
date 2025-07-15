@@ -13,7 +13,7 @@ protected:
      */
     void SetUp() override
     {
-        ArpTable::GetInstance().clear();
+        ArpTable::getInstance().clear();
     }
 };
 
@@ -90,12 +90,12 @@ TEST_F(ArpTest, ArpHeaderEquality)
  */
 TEST_F(ArpTest, ArpTableSingleton)
 {
-    // 检查两次调用 GetInstance 是否返回相同的实例
-    EXPECT_EQ(&ArpTable::GetInstance(), &ArpTable::GetInstance());
+    // 检查两次调用 getInstance 是否返回相同的实例
+    EXPECT_EQ(&ArpTable::getInstance(), &ArpTable::getInstance());
 }
 
 /**
- * @brief 测试 ArpTable 的 push_back 和 remove 操作
+ * @brief 测试 ArpTable 的 pushBack 和 remove 操作
  */
 TEST_F(ArpTest, ArpTablePushRemove)
 {
@@ -110,14 +110,14 @@ TEST_F(ArpTest, ArpTablePushRemove)
         .target_hwaddr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
         .target_protoaddr = 0xC0A80002};
 
-    // 测试 push_back 操作
-    EXPECT_EQ(ArpTable::GetInstance().push_back(header), 0);
+    // 测试 pushBack 操作
+    EXPECT_EQ(ArpTable::getInstance().pushBack(header), 0);
 
     // 测试移除存在的条目
-    EXPECT_EQ(ArpTable::GetInstance().remove(header), 0);
+    EXPECT_EQ(ArpTable::getInstance().remove(header), 0);
 
     // 测试移除不存在的条目
-    EXPECT_EQ(ArpTable::GetInstance().remove(header), -1);
+    EXPECT_EQ(ArpTable::getInstance().remove(header), -1);
 }
 
 /**
@@ -143,7 +143,7 @@ TEST_F(ArpTest, ArpTableThreadSafety)
     {
         for (int i = 0; i < 100; ++i)
         {
-            ArpTable::GetInstance().push_back(header);
+            ArpTable::getInstance().pushBack(header);
         }
     };
 
@@ -151,7 +151,7 @@ TEST_F(ArpTest, ArpTableThreadSafety)
     {
         for (int i = 0; i < 100; ++i)
         {
-            ArpTable::GetInstance().remove(header);
+            ArpTable::getInstance().remove(header);
         }
     };
 

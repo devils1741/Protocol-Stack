@@ -4,8 +4,8 @@ project(ProtocolStack LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# project header
 include_directories(${CMAKE_SOURCE_DIR}/include)
+include_directories(${CMAKE_SOURCE_DIR}/src)
 
 # GoogleTest
 find_package(GTest REQUIRED)
@@ -27,14 +27,13 @@ add_subdirectory(test)
 
 add_executable(ProtocolStack
         src/main.cpp
+        src/dpdkManager.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE
         ${DPDK_INCLUDE_DIRS}
         ${GTEST_INCLUDE_DIRS}
 )
-
-target_link_directories(ProtocolStack PRIVATE ${DPDK_LIBRARY_DIRS})
 
 target_link_libraries(ProtocolStack PRIVATE
         ${DPDK_LIBRARIES}

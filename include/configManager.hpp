@@ -32,7 +32,7 @@ public:
         _timer_resolution_cycles = _json["TIMER_RESOLUTION_CYCLES"].get<unsigned long long>();
         _local_ip = _json["LOCAL_IP"].get<std::string>();
         _local_addr = inet_addr(_local_ip.c_str());
-
+        _gDpdkPortId = _json["gDpdkPortId"].get<int>();
         return true;
     }
 
@@ -56,6 +56,7 @@ public:
     uint32_t getRingSize() const { return _ring_size; }
     string getLocalIp() const { return _local_ip; }
     uint32_t getLocalAddr() const { return _local_addr; }
+    int getDpdkPortId() const { return _gDpdkPortId; }
     unsigned long long getTimerResolutionCycles() const { return _timer_resolution_cycles; }
 
 private:
@@ -74,4 +75,5 @@ private:
     unsigned long long _timer_resolution_cycles = 0;
     std::string _local_ip;
     uint32_t _local_addr = 0;
+    int _gDpdkPortId = 0;
 };

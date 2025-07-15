@@ -72,7 +72,7 @@ public:
      * @brief 获取唯一对象
      * @return 静态类本身
      */
-    static ArpTable &GetInstance()
+    static ArpTable &getInstance()
     {
         static ArpTable _arpTable;
         if (_list == nullptr)
@@ -86,7 +86,7 @@ public:
      * @brief 插入arp数据到队列尾部
      * @return 成功时返回0
      */
-    static int push_back(ArpHeader arpHeader)
+    static int pushBack(ArpHeader arpHeader)
     {
         lock_guard<mutex> lock(_mutex);
         _list->push_back(arpHeader);

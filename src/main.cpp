@@ -1,12 +1,18 @@
 #include <iostream>
+#include <memory>
 #include <rte_eal.h>
+#include <rte_ethdev.h>
 #include <rte_mbuf.h>
 #include "logger.hpp"
 #include "configManager.hpp"
+#include "dpdkManager.hpp"
+
+static const struct rte_eth_conf port_conf_default = {
+    .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
 int main(int argc, char **argv)
 {
-    init_logger();
+    initLogger();
     SPDLOG_INFO("The APP start!");
 
     ConfigManager &configManager = ConfigManager::getInstance();
@@ -15,6 +21,7 @@ int main(int argc, char **argv)
     SPDLOG_INFO(configManager.toString());
 
     const int NUM_MBUFS = configManager.getNumMbufs();
+    const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
     if (rte_eal_init(argc, argv) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK EAL");
@@ -30,7 +37,11 @@ int main(int argc, char **argv)
         rte_exit(EXIT_FAILURE, "Could not create mbuf pool\n");
     }
 
-    ng_init_port(mbuf_pool);
-
-	rte_eth_macaddr_get(gDpdkPortId, (struct rte_ether_addr *)gSrcMac);
+    std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>(*mbuf_pool);
+    if (dpdkManager->initPort(G_DPDK_PORT_ID, port_conf_default) < 0)
+    {
+        SPDLOG_ERROR("Failed to initialize DPDK port");
+        rte_exit(EXIT_FAILURE, "Error with port init\n");
+        return -1;
+    }
 }
