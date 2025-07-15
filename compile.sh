@@ -16,4 +16,4 @@ fi
 
 # 运行可执行文件
 echo "Running the executable..."
-./ProtocolStack
+./ProtocolStack -c 0xf

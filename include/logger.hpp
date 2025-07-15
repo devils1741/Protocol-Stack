@@ -46,7 +46,7 @@ spdlog::level::level_enum log_level_from_string(const string &logLevel)
  * @param logFilePath 日志存储路径+名称
  * @param logLevel 日志等级
  */
-void init_logger(const std::string &logFilePath = "../log/log.txt", const std::string &logLevel = "debug")
+void init_logger(const std::string &logFilePath = "../log/log.txt", const std::string &logLevel = "info")
 {
     // 初始化线程池（全局操作，确保只调用一次）
     static bool initialized = false;
