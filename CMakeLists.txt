@@ -10,6 +10,8 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 # GoogleTest
 find_package(GTest REQUIRED)
 
+find_package(nlohmann_json REQUIRED)
+
 # splog
 if(NOT TARGET spdlog)
     # Stand-alone build
@@ -38,6 +40,7 @@ target_link_libraries(ProtocolStack PRIVATE
         ${DPDK_LIBRARIES}
         GTest::gtest GTest::gtest_main
         PRIVATE spdlog::spdlog_header_only
+        PRIVATE nlohmann_json::nlohmann_json
 )
 
-target_compile_options(ProtocolStack PRIVATE -O3 -Wall -g -msse4.1)
+target_compile_options(ProtocolStack PRIVATE -O3 -Wall -g -msse4.1 ) 
