@@ -5,6 +5,7 @@
 #include <rte_ethdev.h>
 #include <memory>
 #include <string>
+#include "logger.hpp"
 using std::string;
 
 class DPDKManager

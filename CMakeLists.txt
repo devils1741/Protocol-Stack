@@ -28,6 +28,7 @@ add_subdirectory(test)
 add_executable(ProtocolStack
         src/main.cpp
         src/dpdkManager.cpp
+        src/logger.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

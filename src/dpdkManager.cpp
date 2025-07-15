@@ -1,5 +1,4 @@
 #include "dpdkManager.hpp"
-#include "logger.hpp"
 
 DPDKManager::DPDKManager(rte_mempool &mbufPool)
 {
