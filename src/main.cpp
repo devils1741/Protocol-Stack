@@ -10,6 +10,8 @@
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
+static uint8_t gSrcMac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
 int main(int argc, char **argv)
 {
     initLogger();
@@ -36,4 +38,29 @@ int main(int argc, char **argv)
         rte_exit(EXIT_FAILURE, "Error with port init\n");
         return -1;
     }
+    
+    if (rte_eth_macaddr_get(G_DPDK_PORT_ID, (struct rte_ether_addr *)gSrcMac) == 0)
+    {
+        SPDLOG_INFO("Source MAC address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                    gSrcMac[0], gSrcMac[1], gSrcMac[2], gSrcMac[3], gSrcMac[4], gSrcMac[5]);
+    }
+    else
+    {
+        SPDLOG_ERROR("Failed to get source MAC address");
+        rte_exit(EXIT_FAILURE, "Error getting MAC address\n");
+        return -1;
+    }
+
+    struct inout_ring *ring = ringInstance();
+	if (ring == NULL) {
+		rte_exit(EXIT_FAILURE, "ring buffer init failed\n");
+	}
+
+	if (ring->in == NULL) {
+		ring->in = rte_ring_create("in ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+	}
+	if (ring->out == NULL) {
+		ring->out = rte_ring_create("out ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+	}
+
 }

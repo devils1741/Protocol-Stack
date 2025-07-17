@@ -40,7 +40,6 @@ target_link_libraries(ProtocolStack PRIVATE
         ${DPDK_LIBRARIES}
         GTest::gtest GTest::gtest_main
         PRIVATE spdlog::spdlog_header_only
-        PRIVATE nlohmann_json::nlohmann_json
 )
 
 target_compile_options(ProtocolStack PRIVATE -O3 -Wall -g -msse4.1 ) 

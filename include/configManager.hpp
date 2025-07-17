@@ -7,7 +7,9 @@
 // 使用 nlohmann/json 的命名空间
 using json = nlohmann::json;
 
-// 定义一个类来管理配置
+/**
+ * @brief ConfigManager 类用于读取JSON配置文件中的参数
+ */
 class ConfigManager
 {
 public:
