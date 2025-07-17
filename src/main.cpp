@@ -6,6 +6,7 @@
 #include "logger.hpp"
 #include "configManager.hpp"
 #include "dpdkManager.hpp"
+#include "ring.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
@@ -24,6 +25,7 @@ int main(int argc, char **argv)
 
     const int NUM_MBUFS = configManager.getNumMbufs();
     const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
+    const int RING_SIZE = 1024;
     if (rte_eal_init(argc, argv) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK EAL");
@@ -38,7 +40,7 @@ int main(int argc, char **argv)
         rte_exit(EXIT_FAILURE, "Error with port init\n");
         return -1;
     }
-    
+
     if (rte_eth_macaddr_get(G_DPDK_PORT_ID, (struct rte_ether_addr *)gSrcMac) == 0)
     {
         SPDLOG_INFO("Source MAC address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
@@ -51,16 +53,21 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    struct inout_ring *ring = ringInstance();
-	if (ring == NULL) {
-		rte_exit(EXIT_FAILURE, "ring buffer init failed\n");
-	}
+    struct inout_ring *ring = Ring::getSingleton().getRing();
+    if (ring == NULL)
+    {
+        SPDLOG_ERROR("Failed to allocate memory for ring buffer");
+        rte_exit(EXIT_FAILURE, "ring buffer init failed\n");
+    }
 
-	if (ring->in == NULL) {
-		ring->in = rte_ring_create("in ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-	}
-	if (ring->out == NULL) {
-		ring->out = rte_ring_create("out ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-	}
-
+    if (ring->in == NULL)
+    {
+        SPDLOG_INFO("Creating input ring");
+        ring->in = rte_ring_create("in ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    }
+    if (ring->out == NULL)
+    {
+        SPDLOG_INFO("Creating out ring");
+        ring->out = rte_ring_create("out ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
+    }
 }

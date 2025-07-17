@@ -11,7 +11,7 @@ struct inout_ring
 class Ring
 {
 public:
-    static struct inout_ring *getInstance()
+    struct inout_ring *getRing()
     {
         if (_ring == nullptr)
         {
@@ -20,12 +20,17 @@ public:
         }
         return _ring;
     }
+    static Ring &getSingleton()
+    {
+        static Ring instance; ///< 静态实例，确保只创建一次
+        return instance;
+    }
 
 private:
     Ring() = default;  ///< 私有构造函数，禁止外部实例化
     ~Ring() = default; ///< 私有析构函数，禁止外部删除
 private:
-    static struct inout_ring *_ring = nullptr; ///< 内部使用的环形缓冲区结构体指针
+    struct inout_ring *_ring = nullptr; ///< 内部使用的环形缓冲区结构体指针
 };
 
 #endif
