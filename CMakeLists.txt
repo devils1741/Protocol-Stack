@@ -23,12 +23,13 @@ endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DPDK REQUIRED libdpdk)
 
-# add_subdirectory(test)
+add_subdirectory(test)
 
 add_executable(ProtocolStack
         src/main.cpp
         src/DpdkManager.cpp
         src/Logger.cpp
+        src/PktProcess.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE
@@ -42,4 +43,4 @@ target_link_libraries(ProtocolStack PRIVATE
         PRIVATE spdlog::spdlog_header_only
 )
 
-target_compile_options(ProtocolStack PRIVATE -O3 -Wall -g -msse4.1 ) 
+target_compile_options(ProtocolStack PRIVATE  -Wall -g -msse4.1) 

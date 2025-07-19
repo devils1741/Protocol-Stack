@@ -7,21 +7,13 @@
 #include "ConfigManager.hpp"
 #include "DpdkManager.hpp"
 #include "Ring.hpp"
+#include "PktProcess.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
 static uint8_t gSrcMac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-static int pkt_process(void *arg)
-{
-    SPDLOG_INFO("Packet processing started on lcore {}", rte_lcore_id());
-    while (1)
-    {
-      
-    }
-    return 0;
-}
+static struct PktProcessParams pktParams;
 
 int main(int argc, char **argv)
 {
@@ -64,9 +56,29 @@ int main(int argc, char **argv)
     }
 
     Ring::getSingleton().setRingSize(RING_SIZE);
-    const struct inout_ring *ring = Ring::getSingleton().getRing();
+    struct inout_ring *ring = Ring::getSingleton().getRing();
 
     unsigned lcore_id = rte_lcore_id();
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
-	rte_eal_remote_launch(pkt_process, dpdkManager->getMbufPool(), lcore_id);
+    pktParams = {
+        .mbufPool = dpdkManager->getMbufPool(),
+        .ring = ring};
+    rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
+
+    while (1)
+    {
+        struct rte_mbuf *rx[32];
+        unsigned num_recvd = rte_eth_rx_burst(0, 0, rx, 32);
+        if (num_recvd > 32)
+        {
+            rte_exit(EXIT_FAILURE, "Error receiving from eth\n");
+        }
+        else if (num_recvd > 0)
+        {
+            SPDLOG_INFO("Received {} packets from eth", num_recvd);
+            rte_ring_sp_enqueue_burst(ring->in, (void **) rx, num_recvd, NULL);
+        }
+    }
+    
+    rte_eal_wait_lcore(lcore_id);
 }

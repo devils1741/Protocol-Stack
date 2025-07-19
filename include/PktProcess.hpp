@@ -1,13 +1,14 @@
 #ifndef PKT_PROCESS_HPP
 #define PKT_PROCESS_HPP
+#include <rte_mbuf.h>
+#include "Logger.hpp"
+#include "Ring.hpp"
 
-
-class PktProcess
+struct PktProcessParams
 {
-    public:
-    
-    private:
+    struct rte_mempool *mbufPool;
+    struct inout_ring *ring;
 };
 
-
+int pkt_process(void *arg);
 #endif

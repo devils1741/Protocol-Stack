@@ -16,7 +16,7 @@ public:
         static Ring instance;
         return instance;
     }
-    
+
     int setRingSize(size_t size)
     {
         if (size == 0 || (size & (size - 1)) != 0)
@@ -33,6 +33,7 @@ public:
     {
         if (_ring == nullptr)
         {
+            SPDLOG_INFO("Creating ring buffer with size: {}", _RING_SIZE);
             _ring = static_cast<struct inout_ring *>(rte_malloc("in/out ring", sizeof(struct inout_ring), 0));
             if (_ring == nullptr)
             {
