@@ -3,15 +3,25 @@
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 #include <rte_mbuf.h>
-#include "logger.hpp"
-#include "configManager.hpp"
-#include "dpdkManager.hpp"
-#include "ring.hpp"
+#include "Logger.hpp"
+#include "ConfigManager.hpp"
+#include "DpdkManager.hpp"
+#include "Ring.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
 static uint8_t gSrcMac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+
+static int pkt_process(void *arg)
+{
+    SPDLOG_INFO("Packet processing started on lcore {}", rte_lcore_id());
+    while (1)
+    {
+      
+    }
+    return 0;
+}
 
 int main(int argc, char **argv)
 {
@@ -25,7 +35,7 @@ int main(int argc, char **argv)
 
     const int NUM_MBUFS = configManager.getNumMbufs();
     const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
-    const int RING_SIZE = 1024;
+    const int RING_SIZE = configManager.getRingSize();
     if (rte_eal_init(argc, argv) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK EAL");
@@ -53,21 +63,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    struct inout_ring *ring = Ring::getSingleton().getRing();
-    if (ring == NULL)
-    {
-        SPDLOG_ERROR("Failed to allocate memory for ring buffer");
-        rte_exit(EXIT_FAILURE, "ring buffer init failed\n");
-    }
+    Ring::getSingleton().setRingSize(RING_SIZE);
+    const struct inout_ring *ring = Ring::getSingleton().getRing();
 
-    if (ring->in == NULL)
-    {
-        SPDLOG_INFO("Creating input ring");
-        ring->in = rte_ring_create("in ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-    }
-    if (ring->out == NULL)
-    {
-        SPDLOG_INFO("Creating out ring");
-        ring->out = rte_ring_create("out ring", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-    }
+    unsigned lcore_id = rte_lcore_id();
+    lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
+	rte_eal_remote_launch(pkt_process, dpdkManager->getMbufPool(), lcore_id);
 }

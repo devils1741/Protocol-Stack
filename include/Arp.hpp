@@ -29,36 +29,7 @@ struct ArpHeader
      * @brief 比较两个ArpHeader是否相等，通过属性进行比较，全部相等才认为等价的
      * @return 相等返回true,否则返回false
      */
-    bool operator==(const ArpHeader &other) const
-    {
-        if (hardware_type != other.hardware_type)
-            return false;
-
-        if (protocol_type != other.protocol_type)
-            return false;
-
-        if (hardware_length != other.hardware_length)
-            return false;
-
-        if (protocol_length != other.protocol_length)
-            return false;
-
-        if (operation != other.operation)
-            return false;
-
-        if (!equal(sender_hwaddr, sender_hwaddr + sizeof(sender_hwaddr), other.sender_hwaddr))
-            return false;
-
-        if (sender_protoaddr != other.sender_protoaddr)
-            return false;
-
-        if (!equal(target_hwaddr, target_hwaddr + sizeof(target_hwaddr), other.target_hwaddr))
-            return false;
-
-        if (target_protoaddr != other.target_protoaddr)
-            return false;
-        return true;
-    }
+    bool operator==(const ArpHeader &other) const;
 };
 
 /**
@@ -72,65 +43,24 @@ public:
      * @brief 获取唯一对象
      * @return 静态类本身
      */
-    static ArpTable &getInstance()
-    {
-        static ArpTable _arpTable;
-        if (_list == nullptr)
-        {
-            _list = new list<ArpHeader>();
-        }
-        return _arpTable;
-    }
-
+    static ArpTable &getInstance();
     /**
      * @brief 插入arp数据到队列尾部
      * @return 成功时返回0
      */
-    static int pushBack(ArpHeader arpHeader)
-    {
-        lock_guard<mutex> lock(_mutex);
-        _list->push_back(arpHeader);
-        return 0;
-    }
+    static int pushBack(ArpHeader arpHeader);
 
     /**
      * @brief 移除某个arp数据
      * @return 成功时返回0,存储队列为空或者找不到要移除的数据则返回-1
      */
-    static int remove(const ArpHeader &arpHeader)
-    {
-        lock_guard<mutex> lock(_mutex);
-        if (_list == nullptr)
-        {
-            return -1;
-        }
-
-        for (auto it = _list->begin(); it != _list->end();)
-        {
-            if (*it == arpHeader)
-            {
-                it = _list->erase(it);
-                return 0;
-            }
-            ++it;
-        }
-        return -1;
-    }
+    static int remove(const ArpHeader &arpHeader);
 
     /**
      * @brief 清空队列中的所有数据
      * @return 成功时返回0, 如果列表本来就是空则返回-1
      */
-    static int clear()
-    {
-        lock_guard<mutex> lock(_mutex);
-        if (_list != nullptr)
-        {
-            _list->clear();
-            return 0;
-        }
-        return -1;
-    }
+    static int clear();
 
 private:
     ArpTable() {};
@@ -144,8 +74,4 @@ private:
     static list<ArpHeader> *_list; ///< 存储arp数据
     static mutex _mutex;           ///< 互斥锁,用于实现线程安全
 };
-
-list<ArpHeader> *ArpTable::_list = nullptr;
-mutex ArpTable::_mutex;
-
 #endif

@@ -1,4 +1,4 @@
-#include "dpdkManager.hpp"
+#include "DpdkManager.hpp"
 
 DPDKManager::DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id) : _name(name), _NUM_MBUFS(NUM_MBUFS), _socket_id(socket_id)
 {

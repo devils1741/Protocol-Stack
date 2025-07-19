@@ -6,7 +6,7 @@
 #include <rte_ethdev.h>
 #include <memory>
 #include <string>
-#include "logger.hpp"
+#include "Logger.hpp"
 
 using std::string;
 

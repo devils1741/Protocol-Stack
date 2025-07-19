@@ -23,12 +23,12 @@ endif()
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(DPDK REQUIRED libdpdk)
 
-add_subdirectory(test)
+# add_subdirectory(test)
 
 add_executable(ProtocolStack
         src/main.cpp
-        src/dpdkManager.cpp
-        src/logger.cpp
+        src/DpdkManager.cpp
+        src/Logger.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE
