@@ -13,7 +13,6 @@ static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
 static uint8_t gSrcMac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-static struct PktProcessParams pktParams;
 
 int main(int argc, char **argv)
 {
@@ -28,6 +27,8 @@ int main(int argc, char **argv)
     const int NUM_MBUFS = configManager.getNumMbufs();
     const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
     const int RING_SIZE = configManager.getRingSize();
+    const int BURST_SIZE = configManager.getBurstSize();
+
     if (rte_eal_init(argc, argv) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK EAL");
@@ -60,25 +61,29 @@ int main(int argc, char **argv)
 
     unsigned lcore_id = rte_lcore_id();
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
-    pktParams = {
+    struct PktProcessParams pktParams = {
         .mbufPool = dpdkManager->getMbufPool(),
-        .ring = ring};
+        .ring = ring,
+        .BURST_SIZE = BURST_SIZE};
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
 
+    // 设置接收队列和发送队列
     while (1)
     {
-        struct rte_mbuf *rx[32];
-        unsigned num_recvd = rte_eth_rx_burst(0, 0, rx, 32);
-        if (num_recvd > 32)
+        // 接收数据包
+        struct rte_mbuf *rx[BURST_SIZE];
+        unsigned num_recvd = rte_eth_rx_burst(G_DPDK_PORT_ID, 0, rx, BURST_SIZE);
+        if (num_recvd > BURST_SIZE)
         {
-            rte_exit(EXIT_FAILURE, "Error receiving from eth\n");
+            SPDLOG_ERROR("Received more packets than burst size");
+            rte_exit(EXIT_FAILURE, "Received more packets than burst size\n");
         }
         else if (num_recvd > 0)
         {
-            SPDLOG_INFO("Received {} packets from eth", num_recvd);
-            rte_ring_sp_enqueue_burst(ring->in, (void **) rx, num_recvd, NULL);
+            rte_ring_sp_enqueue_burst(ring->in, (void **)rx, num_recvd, NULL);
+            SPDLOG_INFO("Received {} packets from port {}", num_recvd, G_DPDK_PORT_ID);
         }
     }
-    
+
     rte_eal_wait_lcore(lcore_id);
 }

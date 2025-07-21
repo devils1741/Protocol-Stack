@@ -1,7 +1,6 @@
 #include "PktProcess.hpp"
 #include <rte_ethdev.h>
-
-int BURST_SIZE = 32;
+#include <arpa/inet.h>
 
 int pkt_process(void *arg)
 {
@@ -19,6 +18,7 @@ int pkt_process(void *arg)
         SPDLOG_ERROR("Mbuf pool or ring is null");
         return -1;
     }
+    const int BURST_SIZE = pktParams->BURST_SIZE;
 
     while (1)
     {
@@ -31,7 +31,11 @@ int pkt_process(void *arg)
             struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbufs[i], struct rte_ether_hdr *);
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
-                SPDLOG_INFO("Received ARP packet");
+                struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbufs[i],
+                                                                   struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
+                struct in_addr addr;
+                addr.s_addr = ahdr->arp_data.arp_sip;
+                SPDLOG_INFO("Received ARP packet from IP {}", inet_ntoa(addr));
             }
         }
     }
