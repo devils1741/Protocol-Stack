@@ -28,6 +28,7 @@ int main(int argc, char **argv)
     const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
+    const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
 
     if (rte_eal_init(argc, argv) < 0)
     {
@@ -64,7 +65,8 @@ int main(int argc, char **argv)
     struct PktProcessParams pktParams = {
         .mbufPool = dpdkManager->getMbufPool(),
         .ring = ring,
-        .BURST_SIZE = BURST_SIZE};
+        .BURST_SIZE = BURST_SIZE,
+        .LOCAL_ADDR = LOCAL_ADDR};
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
 
     // 设置接收队列和发送队列

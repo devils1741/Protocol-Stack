@@ -19,6 +19,7 @@ int pkt_process(void *arg)
         return -1;
     }
     const int BURST_SIZE = pktParams->BURST_SIZE;
+    const uint32_t LOCAL_ADDR = pktParams->LOCAL_ADDR;
 
     while (1)
     {
@@ -29,13 +30,35 @@ int pkt_process(void *arg)
         {
             SPDLOG_INFO("Received packet");
             struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbufs[i], struct rte_ether_hdr *);
+     
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
-                struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbufs[i],
-                                                                   struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
-                struct in_addr addr;
-                addr.s_addr = ahdr->arp_data.arp_sip;
-                SPDLOG_INFO("Received ARP packet from IP {}", inet_ntoa(addr));
+                SPDLOG_INFO("Received ARP packet");
+            }
+
+            // 不是IPV4协议的包，跳过
+            if (ehdr->ether_type != rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4))
+            {
+                continue;
+            }
+
+            // 处理IPV4包
+            struct rte_ipv4_hdr *iphdr = rte_pktmbuf_mtod_offset(mbufs[i], struct rte_ipv4_hdr *,
+                                                                 sizeof(struct rte_ether_hdr));
+
+            if (iphdr->next_proto_id == IPPROTO_UDP)
+            {
+                SPDLOG_INFO("Received UDP packet");
+            }
+
+            if (iphdr->next_proto_id == IPPROTO_TCP)
+            {
+                SPDLOG_INFO("Received TCP packet");
+            }
+
+            if (iphdr->next_proto_id == IPPROTO_ICMP)
+            {
+                SPDLOG_INFO("Received ICMP packet");
             }
         }
     }
