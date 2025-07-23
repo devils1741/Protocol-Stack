@@ -33,7 +33,9 @@ public:
         _ring_size = _json["RING_SIZE"].get<int>();
         _timer_resolution_cycles = _json["TIMER_RESOLUTION_CYCLES"].get<unsigned long long>();
         _local_ip = _json["LOCAL_IP"].get<std::string>();
-        _local_addr = inet_addr(_local_ip.c_str());
+        struct in_addr addr;
+        inet_pton(AF_INET, _local_ip.c_str(), &addr); // addr.s_addr 现在是网络字节序
+        _local_addr = ntohl(addr.s_addr);
         _gDpdkPortId = _json["gDpdkPortId"].get<int>();
         return true;
     }
