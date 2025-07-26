@@ -1,6 +1,6 @@
 #include "PktProcess.hpp"
-#include <rte_ethdev.h>
-#include <arpa/inet.h>
+#include "ArpProcess.hpp"
+#include "Logger.hpp"
 
 int pkt_process(void *arg)
 {
@@ -20,6 +20,7 @@ int pkt_process(void *arg)
     }
     const int BURST_SIZE = pktParams->BURST_SIZE;
     const uint32_t LOCAL_ADDR = pktParams->LOCAL_ADDR;
+    ArpProcess arpProcess;
 
     while (1)
     {
@@ -30,10 +31,11 @@ int pkt_process(void *arg)
         {
             SPDLOG_INFO("Received packet");
             struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbufs[i], struct rte_ether_hdr *);
-     
+
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
                 SPDLOG_INFO("Received ARP packet");
+                arpProcess.handlePacket(mbufPool, mbufs[i], ring);
             }
 
             // 不是IPV4协议的包，跳过

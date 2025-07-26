@@ -30,6 +30,7 @@ add_executable(ProtocolStack
         src/DpdkManager.cpp
         src/Logger.cpp
         src/PktProcess.cpp
+        src/ArpProcess.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

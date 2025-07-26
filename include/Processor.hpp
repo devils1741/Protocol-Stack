@@ -10,17 +10,10 @@ struct packet
 class Processor
 {
 public:
-    virtual ~Processor() = default;
-    void handlePacket();
-    void setNextProcessor(std::shared_ptr<Processor> nextProcessor);
-    void handlePacket(struct rte_mbuf *mbuf);
-
-protected:
-    virtual bool canProcess(struct rte_mbuf *mbuf) = 0;
-    virtual void process(struct rte_mbuf *mbuf) = 0;
+    virtual int setNextProcessor(std::shared_ptr<Processor> nextProcessor) = 0;
 
 private:
-    std::shared_ptr<Processor> _processor;
+    std::shared_ptr<Processor> _nextProcessor;
 };
 
 #endif // PROCESSOR_HPP

@@ -1,10 +1,14 @@
 #ifndef __ARP_H__
 #define __ARP_H__
-
-#include <rte_ether.h>
+#include <rte_eal.h>
+#include <rte_ethdev.h>
+#include <rte_mbuf.h>
+#include <rte_malloc.h>
 #include <list>
 #include <algorithm>
 #include <mutex>
+#include <arpa/inet.h>
+#include "Logger.hpp"
 
 using std::equal;
 using std::list;
@@ -15,15 +19,15 @@ using std::mutex;
  */
 struct ArpHeader
 {
-    uint16_t hardware_type = 0xFFFF;        ///< 硬件类型
-    uint16_t protocol_type = 0xFFFF;        ///< 协议类型
-    uint8_t hardware_length = 0xFF;         ///< 硬件地址长度
-    uint8_t protocol_length = 0xFF;         ///< 协议地址长度
-    uint16_t operation = 0xFFFF;            ///< 操作码
-    uint8_t sender_hwaddr[6] = {0xFF};      ///< 发送方硬件地址
-    uint32_t sender_protoaddr = 0xFFFFFFFF; ///< 发送方协议地址
-    uint8_t target_hwaddr[6] = {0xFF};      ///< 目标硬件地址
-    uint32_t target_protoaddr = 0xFFFFFFFF; ///< 目标协议地址
+    uint16_t hardware_type = 0xFFFF;                    ///< 硬件类型
+    uint16_t protocol_type = 0xFFFF;                    ///< 协议类型
+    uint8_t hardware_length = 0xFF;                     ///< 硬件地址长度
+    uint8_t protocol_length = 0xFF;                     ///< 协议地址长度
+    uint16_t operation = 0xFFFF;                        ///< 操作码
+    uint8_t sender_hwaddr[RTE_ETHER_ADDR_LEN] = {0xFF}; ///< 发送方硬件地址
+    uint32_t sender_protoaddr = 0xFFFFFFFF;             ///< 发送方协议地址
+    uint8_t target_hwaddr[RTE_ETHER_ADDR_LEN] = {0xFF}; ///< 目标硬件地址
+    uint32_t target_protoaddr = 0xFFFFFFFF;             ///< 目标协议地址
 
     /**
      * @brief 比较两个ArpHeader是否相等，通过属性进行比较，全部相等才认为等价的
@@ -74,4 +78,5 @@ private:
     static list<ArpHeader> *_list; ///< 存储arp数据
     static mutex _mutex;           ///< 互斥锁,用于实现线程安全
 };
+
 #endif

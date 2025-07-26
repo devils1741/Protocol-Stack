@@ -1,7 +1,6 @@
 #ifndef PKT_PROCESS_HPP
 #define PKT_PROCESS_HPP
 #include <rte_mbuf.h>
-#include "Logger.hpp"
 #include "Ring.hpp"
 
 struct PktProcessParams

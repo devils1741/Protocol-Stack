@@ -1,6 +1,7 @@
 #ifndef RING__H__
 #define RING__H__
 #include <rte_malloc.h>
+#include "Logger.hpp"
 
 struct inout_ring
 {
