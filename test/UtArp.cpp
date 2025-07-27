@@ -24,14 +24,8 @@ TEST_F(ArpTest, ArpHeaderEquality)
 {
     ArpHeader header1 = {
         .hardware_type = 1,
-        .protocol_type = 0x0800,
-        .hardware_length = 6,
-        .protocol_length = 4,
-        .operation = 1,
         .sender_hwaddr = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
         .sender_protoaddr = 0xC0A80001, // 192.168.0.1
-        .target_hwaddr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-        .target_protoaddr = 0xC0A80002 // 192.168.0.2
     };
 
     ArpHeader header2 = header1; // 完全相同的副本
@@ -44,26 +38,6 @@ TEST_F(ArpTest, ArpHeaderEquality)
     header3.hardware_type = 2;
     EXPECT_FALSE(header1 == header3);
 
-    // 重置并测试不同的协议类型
-    header3 = header1;
-    header3.protocol_type = 0x0806;
-    EXPECT_FALSE(header1 == header3);
-
-    // 重置并测试不同的硬件地址长度
-    header3 = header1;
-    header3.hardware_length = 8;
-    EXPECT_FALSE(header1 == header3);
-
-    // 重置并测试不同的协议地址长度
-    header3 = header1;
-    header3.protocol_length = 6;
-    EXPECT_FALSE(header1 == header3);
-
-    // 重置并测试不同的操作码
-    header3 = header1;
-    header3.operation = 2;
-    EXPECT_FALSE(header1 == header3);
-
     // 重置并测试不同的发送方硬件地址
     header3 = header1;
     header3.sender_hwaddr[0] = 0xFF;
@@ -72,16 +46,6 @@ TEST_F(ArpTest, ArpHeaderEquality)
     // 重置并测试不同的发送方协议地址
     header3 = header1;
     header3.sender_protoaddr = 0xC0A80003;
-    EXPECT_FALSE(header1 == header3);
-
-    // 重置并测试不同的目标硬件地址
-    header3 = header1;
-    header3.target_hwaddr[0] = 0xFF;
-    EXPECT_FALSE(header1 == header3);
-
-    // 重置并测试不同的目标协议地址
-    header3 = header1;
-    header3.target_protoaddr = 0xC0A80003;
     EXPECT_FALSE(header1 == header3);
 }
 
@@ -101,14 +65,9 @@ TEST_F(ArpTest, ArpTablePushRemove)
 {
     ArpHeader header = {
         .hardware_type = 1,
-        .protocol_type = 0x0800,
-        .hardware_length = 6,
-        .protocol_length = 4,
-        .operation = 1,
         .sender_hwaddr = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
         .sender_protoaddr = 0xC0A80001,
-        .target_hwaddr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-        .target_protoaddr = 0xC0A80002};
+    };
 
     // 测试 pushBack 操作
     EXPECT_EQ(ArpTable::getInstance().pushBack(header), 0);
@@ -129,14 +88,9 @@ TEST_F(ArpTest, ArpTableThreadSafety)
 {
     ArpHeader header = {
         .hardware_type = 1,
-        .protocol_type = 0x0800,
-        .hardware_length = 6,
-        .protocol_length = 4,
-        .operation = 1,
         .sender_hwaddr = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05},
         .sender_protoaddr = 0xC0A80001,
-        .target_hwaddr = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-        .target_protoaddr = 0xC0A80002};
+    };
 
     // 创建多个线程并发执行 push 和 remove 操作
     auto push_task = [&header]()

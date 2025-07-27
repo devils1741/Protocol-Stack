@@ -20,7 +20,6 @@ int pkt_process(void *arg)
         return -1;
     }
     const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
-    const uint32_t LOCAL_ADDR = ConfigManager::getInstance().getLocalAddr();
     ArpProcess arpProcess;
 
     while (1)

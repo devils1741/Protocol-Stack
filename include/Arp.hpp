@@ -20,14 +20,8 @@ using std::mutex;
 struct ArpHeader
 {
     uint16_t hardware_type = 0xFFFF;                    ///< 硬件类型
-    uint16_t protocol_type = 0xFFFF;                    ///< 协议类型
-    uint8_t hardware_length = 0xFF;                     ///< 硬件地址长度
-    uint8_t protocol_length = 0xFF;                     ///< 协议地址长度
-    uint16_t operation = 0xFFFF;                        ///< 操作码
     uint8_t sender_hwaddr[RTE_ETHER_ADDR_LEN] = {0xFF}; ///< 发送方硬件地址
     uint32_t sender_protoaddr = 0xFFFFFFFF;             ///< 发送方协议地址
-    uint8_t target_hwaddr[RTE_ETHER_ADDR_LEN] = {0xFF}; ///< 目标硬件地址
-    uint32_t target_protoaddr = 0xFFFFFFFF;             ///< 目标协议地址
 
     /**
      * @brief 比较两个ArpHeader是否相等，通过属性进行比较，全部相等才认为等价的
@@ -48,6 +42,7 @@ public:
      * @return 静态类本身
      */
     static ArpTable &getInstance();
+
     /**
      * @brief 插入arp数据到队列尾部
      * @return 成功时返回0
@@ -59,6 +54,13 @@ public:
      * @return 成功时返回0,存储队列为空或者找不到要移除的数据则返回-1
      */
     static int remove(const ArpHeader &arpHeader);
+
+    /**
+     * @brief 查找某个IP对应的MAC地址
+     * @param dip 需要查找的IP地址
+     * @return 如果找到则返回对应的MAC地址,否则返回nullptr
+     */
+    static uint8_t *search(const uint32_t &dip);
 
     /**
      * @brief 清空队列中的所有数据
@@ -75,7 +77,7 @@ private:
     ArpTable &operator=(ArpTable &&) = delete;
 
 private:
-    static list<ArpHeader> *_list; ///< 存储arp数据
+    static list<ArpHeader> _list; ///< 存储arp数据
     static mutex _mutex;           ///< 互斥锁,用于实现线程安全
 };
 

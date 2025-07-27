@@ -31,6 +31,7 @@ add_executable(ProtocolStack
         src/Logger.cpp
         src/PktProcess.cpp
         src/ArpProcess.cpp
+        src/Arp.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

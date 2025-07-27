@@ -9,6 +9,8 @@
 #include "Ring.hpp"
 #include "PktProcess.hpp"
 
+#include "Arp.hpp"
+
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
@@ -28,6 +30,7 @@ int main(int argc, char **argv)
     const int BURST_SIZE = configManager.getBurstSize();
     const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
     const uint8_t SRC_MAC[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    // ArpTable::getInstance();
 
     if (rte_eal_init(argc, argv) < 0)
     {

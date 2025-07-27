@@ -1,6 +1,6 @@
 #include "ArpProcess.hpp"
 #include "ConfigManager.hpp"
-
+#include "Arp.hpp"
 
 ArpProcess::ArpProcess()
 {
@@ -72,7 +72,7 @@ int ArpProcess::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf
         return -1; // Error: mbuf is null
     }
 
-    static uint32_t LOCAL_IP =ConfigManager::getInstance().getLocalAddr();
+    static uint32_t LOCAL_IP = ConfigManager::getInstance().getLocalAddr();
     struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
     struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
                                                        struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
@@ -80,17 +80,36 @@ int ArpProcess::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf
     {
         if (ahdr->arp_data.arp_tip == LOCAL_IP)
         {
-            SPDLOG_INFO("Received ARP request or reply for local IP: {}", LOCAL_IP);
-            struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
-                                                               struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
-            struct rte_mbuf *arpbuf = sendArpPacket(mbufPool, RTE_ARP_OP_REPLY,
-                                                    ahdr->arp_data.arp_sha.addr_bytes, ahdr->arp_data.arp_tip,
-                                                    ahdr->arp_data.arp_tha.addr_bytes, ahdr->arp_data.arp_sip);
-            rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, NULL);
-        }
-        else
-        {
-            SPDLOG_INFO("Received ARP response or reply");
+            if (ahdr->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REQUEST))
+            {
+
+                SPDLOG_INFO("Received ARP request for local IP: {}", LOCAL_IP);
+                struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
+                                                                   struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
+                struct rte_mbuf *arpbuf = sendArpPacket(mbufPool, RTE_ARP_OP_REPLY,
+                                                        ahdr->arp_data.arp_sha.addr_bytes, ahdr->arp_data.arp_tip,
+                                                        ahdr->arp_data.arp_tha.addr_bytes, ahdr->arp_data.arp_sip);
+                rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, NULL);
+            }
+            else if (ahdr->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REPLY))
+            {
+                SPDLOG_INFO("Received ARP Replay from IP: {}", static_cast<unsigned int>(ahdr->arp_data.arp_sip));
+                uint8_t *hwaddr = ArpTable::search(ahdr->arp_data.arp_sip);
+                if (hwaddr == nullptr)
+                {
+                    ArpHeader arpHeader = {
+                        .hardware_type = 0,
+                        .sender_protoaddr = ahdr->arp_data.arp_sip,
+                    };
+                    rte_memcpy(arpHeader.sender_hwaddr, ahdr->arp_data.arp_sha.addr_bytes, RTE_ETHER_ADDR_LEN);
+                    ArpTable::getInstance().pushBack(arpHeader);
+                }
+                rte_pktmbuf_free(mbuf);
+            }
+            else
+            {
+                // 传递给后续的handler处理
+            }
         }
     }
 
