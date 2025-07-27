@@ -1,8 +1,6 @@
 #include "ArpProcess.hpp"
+#include "ConfigManager.hpp"
 
-#define MAKE_IPV4_ADDR(a, b, c, d) (a + (b << 8) + (c << 16) + (d << 24))
-
-static uint32_t gLocalIp = MAKE_IPV4_ADDR(192, 168, 0, 104);
 
 ArpProcess::ArpProcess()
 {
@@ -73,15 +71,16 @@ int ArpProcess::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf
         SPDLOG_ERROR("Received null mbuf in ArpProcess::handlePacket");
         return -1; // Error: mbuf is null
     }
+
+    static uint32_t LOCAL_IP =ConfigManager::getInstance().getLocalAddr();
     struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
     struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
                                                        struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
-
     if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
     {
-        if (ahdr->arp_data.arp_tip != gLocalIp)
+        if (ahdr->arp_data.arp_tip == LOCAL_IP)
         {
-            SPDLOG_INFO("Received ARP request or reply for local IP: {}", gLocalIp);
+            SPDLOG_INFO("Received ARP request or reply for local IP: {}", LOCAL_IP);
             struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
                                                                struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
             struct rte_mbuf *arpbuf = sendArpPacket(mbufPool, RTE_ARP_OP_REPLY,

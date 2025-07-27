@@ -1,6 +1,7 @@
 #include "PktProcess.hpp"
 #include "ArpProcess.hpp"
 #include "Logger.hpp"
+#include "ConfigManager.hpp"
 
 int pkt_process(void *arg)
 {
@@ -18,8 +19,8 @@ int pkt_process(void *arg)
         SPDLOG_ERROR("Mbuf pool or ring is null");
         return -1;
     }
-    const int BURST_SIZE = pktParams->BURST_SIZE;
-    const uint32_t LOCAL_ADDR = pktParams->LOCAL_ADDR;
+    const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
+    const uint32_t LOCAL_ADDR = ConfigManager::getInstance().getLocalAddr();
     ArpProcess arpProcess;
 
     while (1)

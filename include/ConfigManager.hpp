@@ -6,7 +6,7 @@
 
 // 使用 nlohmann/json 的命名空间
 using json = nlohmann::json;
-
+#define MAKE_IPV4_ADDR(a, b, c, d) (a + (b << 8) + (c << 16) + (d << 24))
 /**
  * @brief ConfigManager 类用于读取JSON配置文件中的参数
  */
@@ -35,7 +35,7 @@ public:
         _local_ip = _json["LOCAL_IP"].get<std::string>();
         struct in_addr addr;
         inet_pton(AF_INET, _local_ip.c_str(), &addr); // addr.s_addr 现在是网络字节序
-        _local_addr = ntohl(addr.s_addr);
+        _local_addr = MAKE_IPV4_ADDR(192, 168, 0, 104);
         _gDpdkPortId = _json["gDpdkPortId"].get<int>();
         return true;
     }

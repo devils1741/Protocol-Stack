@@ -12,8 +12,6 @@
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
-static uint8_t gSrcMac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
 int main(int argc, char **argv)
 {
     initLogger();
@@ -29,6 +27,7 @@ int main(int argc, char **argv)
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
     const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
+    const uint8_t SRC_MAC[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
     if (rte_eal_init(argc, argv) < 0)
     {
@@ -45,10 +44,10 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    if (rte_eth_macaddr_get(G_DPDK_PORT_ID, (struct rte_ether_addr *)gSrcMac) == 0)
+    if (rte_eth_macaddr_get(G_DPDK_PORT_ID, (struct rte_ether_addr *)SRC_MAC) == 0)
     {
         SPDLOG_INFO("Source MAC address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
-                    gSrcMac[0], gSrcMac[1], gSrcMac[2], gSrcMac[3], gSrcMac[4], gSrcMac[5]);
+                    SRC_MAC[0], SRC_MAC[1], SRC_MAC[2], SRC_MAC[3], SRC_MAC[4], SRC_MAC[5]);
     }
     else
     {
@@ -64,9 +63,7 @@ int main(int argc, char **argv)
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
     struct PktProcessParams pktParams = {
         .mbufPool = dpdkManager->getMbufPool(),
-        .ring = ring,
-        .BURST_SIZE = BURST_SIZE,
-        .LOCAL_ADDR = LOCAL_ADDR};
+        .ring = ring};
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
 
     // 设置接收队列和发送队列
