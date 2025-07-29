@@ -85,6 +85,19 @@ int main(int argc, char **argv)
             rte_ring_sp_enqueue_burst(ring->in, (void **)rx, num_recvd, NULL);
             SPDLOG_INFO("Received {} packets from port {}", num_recvd, G_DPDK_PORT_ID);
         }
+        // 发送数据包
+        struct rte_mbuf *tx[BURST_SIZE];
+        unsigned nb_tx = rte_ring_sc_dequeue_burst(ring->out, (void **)tx, BURST_SIZE, NULL);
+        if (nb_tx > 0)
+        {
+            SPDLOG_INFO("Send packets by {} ", G_DPDK_PORT_ID);
+            rte_eth_tx_burst(G_DPDK_PORT_ID, 0, tx, nb_tx);
+            unsigned i = 0;
+            for (i = 0; i < nb_tx; i++)
+            {
+                rte_pktmbuf_free(tx[i]);
+            }
+        }
     }
 
     rte_eal_wait_lcore(lcore_id);
