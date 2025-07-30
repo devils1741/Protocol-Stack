@@ -25,11 +25,12 @@ int main(int argc, char **argv)
     SPDLOG_INFO(configManager.toString());
 
     const int NUM_MBUFS = configManager.getNumMbufs();
-    const int G_DPDK_PORT_ID = configManager.getDpdkPortId();
+    const int DPDK_PORT_ID = configManager.getDpdkPortId();
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
     const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
-    const uint8_t SRC_MAC[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t SRC_MAC[RTE_ETHER_ADDR_LEN] ={0};
+    rte_memcpy(SRC_MAC, configManager.getSrcMac(), RTE_ETHER_ADDR_LEN);
     // ArpTable::getInstance();
 
     if (rte_eal_init(argc, argv) < 0)
@@ -40,14 +41,14 @@ int main(int argc, char **argv)
     }
 
     std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>("mbuf pool", NUM_MBUFS, rte_socket_id());
-    if (dpdkManager->initPort(G_DPDK_PORT_ID, port_conf_default) < 0)
+    if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
     {
         SPDLOG_ERROR("Failed to initialize DPDK port");
         rte_exit(EXIT_FAILURE, "Error with port init\n");
         return -1;
     }
 
-    if (rte_eth_macaddr_get(G_DPDK_PORT_ID, (struct rte_ether_addr *)SRC_MAC) == 0)
+    if (rte_eth_macaddr_get(DPDK_PORT_ID, (struct rte_ether_addr *)SRC_MAC) == 0)
     {
         SPDLOG_INFO("Source MAC address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
                     SRC_MAC[0], SRC_MAC[1], SRC_MAC[2], SRC_MAC[3], SRC_MAC[4], SRC_MAC[5]);
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
     {
         // 接收数据包
         struct rte_mbuf *rx[BURST_SIZE];
-        unsigned num_recvd = rte_eth_rx_burst(G_DPDK_PORT_ID, 0, rx, BURST_SIZE);
+        unsigned num_recvd = rte_eth_rx_burst(DPDK_PORT_ID, 0, rx, BURST_SIZE);
         if (num_recvd > BURST_SIZE)
         {
             SPDLOG_ERROR("Received more packets than burst size");
@@ -83,15 +84,15 @@ int main(int argc, char **argv)
         else if (num_recvd > 0)
         {
             rte_ring_sp_enqueue_burst(ring->in, (void **)rx, num_recvd, NULL);
-            SPDLOG_INFO("Received {} packets from port {}", num_recvd, G_DPDK_PORT_ID);
+            SPDLOG_INFO("Received {} packets from port {}", num_recvd, DPDK_PORT_ID);
         }
         // 发送数据包
         struct rte_mbuf *tx[BURST_SIZE];
         unsigned nb_tx = rte_ring_sc_dequeue_burst(ring->out, (void **)tx, BURST_SIZE, NULL);
         if (nb_tx > 0)
         {
-            SPDLOG_INFO("Send packets by {} ", G_DPDK_PORT_ID);
-            rte_eth_tx_burst(G_DPDK_PORT_ID, 0, tx, nb_tx);
+            SPDLOG_INFO("Send packets by {} ", DPDK_PORT_ID);
+            rte_eth_tx_burst(DPDK_PORT_ID, 0, tx, nb_tx);
             unsigned i = 0;
             for (i = 0; i < nb_tx; i++)
             {

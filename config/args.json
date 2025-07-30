@@ -4,5 +4,5 @@
     "RING_SIZE": 1024,
     "TIMER_RESOLUTION_CYCLES": 120000000000,
     "LOCAL_IP": "192.168.0.104",
-    "gDpdkPortId": 0
+    "DPDK_PORT_ID": 0
 }

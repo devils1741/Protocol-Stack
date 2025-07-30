@@ -36,7 +36,7 @@ public:
         struct in_addr addr;
         inet_pton(AF_INET, _local_ip.c_str(), &addr); // addr.s_addr 现在是网络字节序
         _local_addr = MAKE_IPV4_ADDR(192, 168, 0, 104);
-        _gDpdkPortId = _json["gDpdkPortId"].get<int>();
+        _dpdk_port_id = _json["DPDK_PORT_ID"].get<int>();
         return true;
     }
 
@@ -60,8 +60,9 @@ public:
     uint32_t getRingSize() const { return _ring_size; }
     string getLocalIp() const { return _local_ip; }
     uint32_t getLocalAddr() const { return _local_addr; }
-    int getDpdkPortId() const { return _gDpdkPortId; }
+    int getDpdkPortId() const { return _dpdk_port_id; }
     unsigned long long getTimerResolutionCycles() const { return _timer_resolution_cycles; }
+    uint8_t *getSrcMac() { return _src_mac; }
 
 private:
     // 私有构造函数
@@ -79,5 +80,6 @@ private:
     unsigned long long _timer_resolution_cycles = 0;
     std::string _local_ip;
     uint32_t _local_addr = 0;
-    int _gDpdkPortId = 0;
+    int _dpdk_port_id = 0;
+    uint8_t _src_mac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 };
