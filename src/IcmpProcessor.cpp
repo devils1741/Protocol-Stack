@@ -5,6 +5,7 @@
 #include <rte_icmp.h>
 #include "Logger.hpp"
 #include "Ring.hpp"
+#include "ConfigManager.hpp"
 
 int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf, struct inout_ring *ring)
 {
@@ -63,13 +64,13 @@ int IcmpProcessor::encodeIcmpPkt(uint8_t *msg, uint8_t *dstMac,
         return -1;
     }
     struct rte_ether_hdr *eth = (struct rte_ether_hdr *)msg;
-    uint8_t srcMac[RTE_ETHER_ADDR_LEN];
-    rte_memcpy(eth->s_addr.addr_bytes, srcMac, RTE_ETHER_ADDR_LEN);
+    auto SRC_MAC = ConfigManager::getInstance().getSrcMac();
+    rte_memcpy(eth->s_addr.addr_bytes, SRC_MAC, RTE_ETHER_ADDR_LEN);
     rte_memcpy(eth->d_addr.addr_bytes, dstMac, RTE_ETHER_ADDR_LEN);
     eth->ether_type = htons(RTE_ETHER_TYPE_IPV4);
 
     SPDLOG_INFO("encodeIcmpPkt srcMac={:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x} dstMac={:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x} srcIp={} dstIp={} id={} seqNb={}",
-                srcMac[0], srcMac[1], srcMac[2], srcMac[3], srcMac[4], srcMac[5],
+                SRC_MAC[0], SRC_MAC[1], SRC_MAC[2], SRC_MAC[3], SRC_MAC[4], SRC_MAC[5],
                 dstMac[0], dstMac[1], dstMac[2], dstMac[3], dstMac[4], dstMac[5],
                 srcIp, dstIp, id, seqNb);
 

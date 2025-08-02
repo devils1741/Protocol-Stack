@@ -29,8 +29,7 @@ int main(int argc, char **argv)
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
     const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
-    uint8_t SRC_MAC[RTE_ETHER_ADDR_LEN] ={0};
-    rte_memcpy(SRC_MAC, configManager.getSrcMac(), RTE_ETHER_ADDR_LEN);
+
     // ArpTable::getInstance();
 
     if (rte_eal_init(argc, argv) < 0)
@@ -48,8 +47,9 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    if (rte_eth_macaddr_get(DPDK_PORT_ID, (struct rte_ether_addr *)SRC_MAC) == 0)
+    if (rte_eth_macaddr_get(DPDK_PORT_ID, (struct rte_ether_addr *)configManager.getSrcMac()) == 0)
     {
+        auto SRC_MAC = configManager.getSrcMac();
         SPDLOG_INFO("Source MAC address: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
                     SRC_MAC[0], SRC_MAC[1], SRC_MAC[2], SRC_MAC[3], SRC_MAC[4], SRC_MAC[5]);
     }
@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         unsigned nb_tx = rte_ring_sc_dequeue_burst(ring->out, (void **)tx, BURST_SIZE, NULL);
         if (nb_tx > 0)
         {
-            SPDLOG_INFO("Send packets with {} ", DPDK_PORT_ID);
+            SPDLOG_INFO("Send packets with port {} ", DPDK_PORT_ID);
             rte_eth_tx_burst(DPDK_PORT_ID, 0, tx, nb_tx);
             unsigned i = 0;
             for (i = 0; i < nb_tx; i++)

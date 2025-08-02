@@ -31,7 +31,7 @@ int pkt_process(void *arg)
         unsigned i = 0;
         for (i = 0; i < num_recvd; i++)
         {
-            SPDLOG_INFO("Received packet");
+            SPDLOG_INFO("Received packet number: {}, current {}", num_recvd, i);
             struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbufs[i], struct rte_ether_hdr *);
 
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))

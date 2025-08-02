@@ -6,7 +6,9 @@ PROJECT_DIR=$(pwd)
 # 删除并重新创建 build 目录
 echo "Cleaning build directory..."
 rm -rf "$PROJECT_DIR/build"
+rm -rf "$PROJECT_DIR/log"
 mkdir "$PROJECT_DIR/build"
+mkdir "$PROJECT_DIR/log"
 
 # 进入 build 目录
 cd "$PROJECT_DIR/build" || { echo "Error: Failed to enter build directory."; exit 1; }
@@ -25,4 +27,5 @@ fi
 
 # 运行可执行文件
 echo "Running the executable..."
+
 ./ProtocolStack -c 0xf
