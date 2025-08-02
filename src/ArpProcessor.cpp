@@ -1,21 +1,21 @@
-#include "ArpProcess.hpp"
+#include "ArpProcessor.hpp"
 #include "ConfigManager.hpp"
 #include "Arp.hpp"
 
-ArpProcess::ArpProcess()
+ArpProcessor::ArpProcessor()
 {
-    SPDLOG_INFO("ArpProcess initialized");
+    SPDLOG_INFO("ArpProcessor initialized");
     // Initialize any other necessary components here
 }
 
-ArpProcess::~ArpProcess()
+ArpProcessor::~ArpProcessor()
 {
-    SPDLOG_INFO("ArpProcess destroyed");
+    SPDLOG_INFO("ArpProcessor destroyed");
     // Initialize any other necessary components here
 }
 
-struct rte_mbuf *ArpProcess::sendArpPacket(struct rte_mempool *mbufPool, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
-                                           uint8_t *dstMac, uint32_t dstIp)
+struct rte_mbuf *ArpProcessor::sendArpPacket(struct rte_mempool *mbufPool, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
+                                             uint8_t *dstMac, uint32_t dstIp)
 {
     SPDLOG_INFO("Sending Arp packet with opcode: {}, srcMac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, srcIp: {}, dstMac: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}, dstIp: {}",
                 opcode, srcMac[0], srcMac[1], srcMac[2], srcMac[3], srcMac[4], srcMac[5],
@@ -38,8 +38,8 @@ struct rte_mbuf *ArpProcess::sendArpPacket(struct rte_mempool *mbufPool, uint16_
     return mbuf;
 }
 
-int ArpProcess::encodeArpPacket(uint8_t *msg, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
-                                uint8_t *dstMac, uint32_t dstIp)
+int ArpProcessor::encodeArpPacket(uint8_t *msg, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
+                                  uint8_t *dstMac, uint32_t dstIp)
 {
     struct rte_ether_hdr *eth = (struct rte_ether_hdr *)msg;
     rte_memcpy(eth->s_addr.addr_bytes, srcMac, RTE_ETHER_ADDR_LEN);
@@ -59,23 +59,30 @@ int ArpProcess::encodeArpPacket(uint8_t *msg, uint16_t opcode, uint8_t *srcMac, 
     return 0;
 }
 
-int ArpProcess::setNextProcessor(std::shared_ptr<Processor> nextProcessor)
+int ArpProcessor::setNextProcessor(std::shared_ptr<Processor> nextProcessor)
 {
     _nextProcessor = nextProcessor;
     return 0; // Assuming success
 }
-int ArpProcess::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf, struct inout_ring *ring)
+int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf, struct inout_ring *ring)
 {
     if (mbuf == nullptr)
     {
-        SPDLOG_ERROR("Received null mbuf in ArpProcess::handlePacket");
+        SPDLOG_ERROR("Received null mbuf in ArpProcessor::handlePacket");
         return -1; // Error: mbuf is null
     }
 
     static uint32_t LOCAL_IP = ConfigManager::getInstance().getLocalAddr();
+
+    struct in_addr addr;
+    addr.s_addr = LOCAL_IP;
+    SPDLOG_INFO("LOCAL_IP: {}", inet_ntoa(addr));
+
     struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
     struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
                                                        struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
+    addr.s_addr = ahdr->arp_data.arp_tip;
+    printf("Received ARP packet target IP: %s", inet_ntoa(addr));
     if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
     {
         if (ahdr->arp_data.arp_tip == LOCAL_IP)
@@ -83,9 +90,8 @@ int ArpProcess::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf
             if (ahdr->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REQUEST))
             {
 
-                SPDLOG_INFO("Received ARP request for local IP: {}", LOCAL_IP);
-                struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
-                                                                   struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
+                uint32_t tip_host = rte_be_to_cpu_32(ahdr->arp_data.arp_tip);
+
                 struct rte_mbuf *arpbuf = sendArpPacket(mbufPool, RTE_ARP_OP_REPLY,
                                                         ahdr->arp_data.arp_sha.addr_bytes, ahdr->arp_data.arp_tip,
                                                         ahdr->arp_data.arp_tha.addr_bytes, ahdr->arp_data.arp_sip);

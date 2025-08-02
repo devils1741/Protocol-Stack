@@ -30,7 +30,8 @@ add_executable(ProtocolStack
         src/DpdkManager.cpp
         src/Logger.cpp
         src/PktProcess.cpp
-        src/ArpProcess.cpp
+        src/ArpProcessor.cpp
+        src/IcmpProcessor.cpp
         src/Arp.cpp
 )
 

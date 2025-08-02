@@ -10,14 +10,12 @@
 #include "Logger.hpp"
 #include "Ring.hpp"
 #include "PktProcess.hpp"
-#include "ArpProcess.hpp"
 
-
-class ArpProcess : public Processor
+class ArpProcessor : public Processor
 {
 public:
-    ArpProcess();
-    ~ArpProcess();
+    ArpProcessor();
+    ~ArpProcessor();
     uint8_t defaultArpMac[RTE_ETHER_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; ///< 默认的广播MAC地址
     struct rte_mbuf *sendArpPacket(struct rte_mempool *mbuf_pool, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
                                    uint8_t *dstMac, uint32_t dstIp);

@@ -1,5 +1,6 @@
 #include "PktProcess.hpp"
-#include "ArpProcess.hpp"
+#include "ArpProcessor.hpp"
+#include "IcmpProcessor.hpp"
 #include "Logger.hpp"
 #include "ConfigManager.hpp"
 
@@ -20,7 +21,8 @@ int pkt_process(void *arg)
         return -1;
     }
     const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
-    ArpProcess arpProcess;
+    ArpProcessor arpProcessor;
+    IcmpProcessor icmpProcessor;
 
     while (1)
     {
@@ -34,8 +36,9 @@ int pkt_process(void *arg)
 
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
-                SPDLOG_INFO("Received ARP packet");
-                arpProcess.handlePacket(mbufPool, mbufs[i], ring);
+                SPDLOG_INFO("Received ARP packet ether_type={}", ehdr->ether_type);
+                arpProcessor.handlePacket(mbufPool, mbufs[i], ring);
+                continue;
             }
 
             // 不是IPV4协议的包，跳过
@@ -50,17 +53,18 @@ int pkt_process(void *arg)
 
             if (iphdr->next_proto_id == IPPROTO_UDP)
             {
-                SPDLOG_INFO("Received UDP packet");
+                SPDLOG_INFO("Received UDP packet. next_proto_id={}", iphdr->next_proto_id);
             }
 
             if (iphdr->next_proto_id == IPPROTO_TCP)
             {
-                SPDLOG_INFO("Received TCP packet");
+                SPDLOG_INFO("Received TCP packet. next_proto_id={}", iphdr->next_proto_id);
             }
 
             if (iphdr->next_proto_id == IPPROTO_ICMP)
             {
-                SPDLOG_INFO("Received ICMP packet");
+                SPDLOG_INFO("Received ICMP packet. next_proto_id={}", iphdr->next_proto_id);
+                icmpProcessor.handlePacket(mbufPool, mbufs[i], ring);
             }
         }
     }

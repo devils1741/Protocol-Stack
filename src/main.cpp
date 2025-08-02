@@ -91,7 +91,7 @@ int main(int argc, char **argv)
         unsigned nb_tx = rte_ring_sc_dequeue_burst(ring->out, (void **)tx, BURST_SIZE, NULL);
         if (nb_tx > 0)
         {
-            SPDLOG_INFO("Send packets by {} ", DPDK_PORT_ID);
+            SPDLOG_INFO("Send packets with {} ", DPDK_PORT_ID);
             rte_eth_tx_burst(DPDK_PORT_ID, 0, tx, nb_tx);
             unsigned i = 0;
             for (i = 0; i < nb_tx; i++)
