@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 #include "Ring.hpp"
 #include "ConfigManager.hpp"
+#include "Utils.hpp"
 
 int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbuf, struct inout_ring *ring)
 {
@@ -25,7 +26,7 @@ int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *m
         if (icmphdr->icmp_type == RTE_IP_ICMP_ECHO_REQUEST)
         {
             addr.s_addr = iphdr->dst_addr;
-            SPDLOG_INFO("Received ICMP Echo Request from {} to {}", inet_ntoa(addr), inet_ntoa(*(struct in_addr *)&iphdr->dst_addr));
+            SPDLOG_INFO("Received ICMP Echo Request from {} to {}", convert_uint32_to_ip(iphdr->src_addr), convert_uint32_to_ip(iphdr->dst_addr));
             struct rte_mbuf *txbuf = sendIcmpPacket(mbufPool, ehdr->s_addr.addr_bytes,
                                                     iphdr->dst_addr, iphdr->src_addr, icmphdr->icmp_ident, icmphdr->icmp_seq_nb);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&txbuf, 1, NULL);
@@ -38,8 +39,8 @@ int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *m
 struct rte_mbuf *IcmpProcessor::sendIcmpPacket(struct rte_mempool *mbufPool, uint8_t *dstMac,
                                                uint32_t sip, uint32_t dip, uint16_t id, uint16_t seqNb)
 {
-    SPDLOG_INFO("IcmpProcessor::sendIcmpPacket: Sending ICMP packet from {} to {} with id={} seqNb={}",
-                inet_ntoa(*(struct in_addr *)&sip), inet_ntoa(*(struct in_addr *)&dip), id, seqNb);
+    SPDLOG_INFO("IcmpProcessor::sendIcmpPacket: Sending ICMP packet: {} to {} with id={} seqNb={}",
+        convert_uint32_to_ip(sip), convert_uint32_to_ip(dip), id, seqNb);
     const unsigned totalLength = sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_icmp_hdr);
     struct rte_mbuf *mbuf = rte_pktmbuf_alloc(mbufPool);
     if (mbuf == nullptr)

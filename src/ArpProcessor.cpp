@@ -96,7 +96,7 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
     struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
                                                        struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
 
-    SPDLOG_INFO("Received ARP from packet target IP: {}", convert_uint32_to_ip(ahdr->arp_data.arp_sip));
+    SPDLOG_INFO("Received ARP request from packet target IP: {}", convert_uint32_to_ip(ahdr->arp_data.arp_sip));
     if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
     {
         if (ahdr->arp_data.arp_tip == LOCAL_IP)
@@ -111,7 +111,7 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
             }
             else if (ahdr->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REPLY))
             {
-                SPDLOG_INFO("Received ARP Replay from IP: {}", static_cast<unsigned int>(ahdr->arp_data.arp_sip));
+                SPDLOG_INFO("Received ARP Replay from IP: {}", convert_uint32_to_ip(ahdr->arp_data.arp_sip));
                 uint8_t *hwaddr = ArpTable::search(ahdr->arp_data.arp_sip);
                 if (hwaddr == nullptr)
                 {
@@ -120,6 +120,11 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
                         .sender_protoaddr = ahdr->arp_data.arp_sip,
                     };
                     rte_memcpy(arpHeader.sender_hwaddr, ahdr->arp_data.arp_sha.addr_bytes, RTE_ETHER_ADDR_LEN);
+                    SPDLOG_INFO("Adding new ARP entry: IP: {}, MAC: {:02x}:{:02x}:{:02x}:{:02x}:{:02x}:{:02x}",
+                                convert_uint32_to_ip(arpHeader.sender_protoaddr),
+                                arpHeader.sender_hwaddr[0], arpHeader.sender_hwaddr[1],
+                                arpHeader.sender_hwaddr[2], arpHeader.sender_hwaddr[3],
+                                arpHeader.sender_hwaddr[4], arpHeader.sender_hwaddr[5]);
                     ArpTable::getInstance().pushBack(arpHeader);
                 }
                 rte_pktmbuf_free(mbuf);
