@@ -16,11 +16,11 @@ class ArpProcessor : public Processor
 public:
     ArpProcessor();
     ~ArpProcessor();
-    uint8_t defaultArpMac[RTE_ETHER_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; ///< 默认的广播MAC地址
+
     struct rte_mbuf *sendArpPacket(struct rte_mempool *mbuf_pool, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
                                    uint8_t *dstMac, uint32_t dstIp);
     int handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbufs, struct inout_ring *ring);
-
+    void getDefaultArpMac(uint8_t *copy);
     /**
      * @brief 编码arp包到msg中
      * @param msg 指向要编码的缓冲区
@@ -38,6 +38,7 @@ protected:
     int setNextProcessor(std::shared_ptr<Processor> nextProcessor) override;
 
 private:
+    const uint8_t defaultArpMac[RTE_ETHER_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; ///< 默认的广播MAC地址
     std::shared_ptr<Processor> _nextProcessor;
 };
 

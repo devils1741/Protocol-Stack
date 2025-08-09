@@ -2,6 +2,7 @@
 #include "ConfigManager.hpp"
 #include "Arp.hpp"
 #include "Utils.hpp"
+#include <cstring>
 
 ArpProcessor::ArpProcessor()
 {
@@ -59,7 +60,7 @@ int ArpProcessor::encodeArpPacket(uint8_t *msg, uint16_t opcode, uint8_t *srcMac
     }
     eth->ether_type = htons(RTE_ETHER_TYPE_ARP);
 
-    struct rte_arp_hdr *arp = (struct rte_arp_hdr *) (eth + 1);
+    struct rte_arp_hdr *arp = (struct rte_arp_hdr *)(eth + 1);
     arp->arp_hardware = htons(1);
     arp->arp_protocol = htons(RTE_ETHER_TYPE_IPV4);
     arp->arp_hlen = RTE_ETHER_ADDR_LEN;
@@ -137,4 +138,9 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
     }
 
     return 0;
+}
+
+void ArpProcessor::getDefaultArpMac(uint8_t *copy)
+{
+    std::memmove(copy, defaultArpMac, RTE_ETHER_ADDR_LEN);
 }
