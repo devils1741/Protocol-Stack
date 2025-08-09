@@ -58,7 +58,7 @@ public:
     uint32_t getNumMbufs() const { return _num_mbufs; }
     uint32_t getBurstSize() const { return _burst_size; }
     uint32_t getRingSize() const { return _ring_size; }
-    string getLocalIp() const { return _local_ip; }
+    std::string getLocalIp() const { return _local_ip; }
     uint32_t getLocalAddr() const { return _local_addr; }
     int getDpdkPortId() const { return _dpdk_port_id; }
     unsigned long long getTimerResolutionCycles() const { return _timer_resolution_cycles; }

@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     const int DPDK_PORT_ID = configManager.getDpdkPortId();
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
-    const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
+    // const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
 
     // ArpTable::getInstance();
 

@@ -34,6 +34,7 @@ int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *m
             rte_pktmbuf_free(mbuf);
         }
     }
+    return 0;
 }
 
 struct rte_mbuf *IcmpProcessor::sendIcmpPacket(struct rte_mempool *mbufPool, uint8_t *dstMac,

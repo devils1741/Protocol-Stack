@@ -2,6 +2,7 @@
 #define UDP__PROCESSOR
 #include "BaseNetwork.hpp"
 #include <arpa/inet.h>
+#include "Processor.hpp"
 #include <mutex>
 
 struct offload
@@ -36,6 +37,8 @@ public:
     int udpProcess(struct rte_mbuf *udpMbuf);
     int udpOut(struct rte_mempool *mbuf_pool);
     struct UdpHost *getHostInfoFromIpAndPort(uint32_t dip, uint16_t port, uint8_t proto);
+    struct rte_mbuf *udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, uint8_t *data, uint16_t length);
+    int encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, unsigned char *data, uint16_t total_len);
 
 private:
     static std::list<UdpHost *> _udpHostList;  ///< 本地主机信息

@@ -34,6 +34,8 @@ add_executable(ProtocolStack
         src/IcmpProcessor.cpp
         src/Arp.cpp
         src/Util.cpp
+        src/BaseNetwork.cpp
+        src/UdpProcessor.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

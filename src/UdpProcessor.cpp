@@ -6,7 +6,7 @@
 #include "ArpProcessor.hpp"
 #include "Ring.hpp"
 
-std::list<UdpHost *> _udpHostList;
+std::list<UdpHost *> UdpProcessor::_udpHostList;
 
 int UdpProcessor::createSocket(__attribute__((unused)) int domain, int type, __attribute__((unused)) int protocol)
 {
@@ -163,9 +163,9 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
     return 0;
 }
 
-struct rte_mbuf *udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t dstIp,
-                        uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
-                        uint8_t *data, uint16_t length)
+struct rte_mbuf *UdpProcessor::udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t dstIp,
+                                      uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
+                                      uint8_t *data, uint16_t length)
 {
 
     const unsigned total_len = length + 42;
@@ -185,9 +185,9 @@ struct rte_mbuf *udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t 
     return mbuf;
 }
 
-int encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
-                    uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
-                    unsigned char *data, uint16_t total_len)
+int UdpProcessor::encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
+                                  uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
+                                  unsigned char *data, uint16_t total_len)
 {
     SPDLOG_INFO("ng_encode_udp_apppkt: sIp: {}, dIp: {}, sPort: {}, dPort: {}, total_len: {}",
                 convert_uint32_to_ip(srcIp), convert_uint32_to_ip(dstIp), ntohs(srcPort), ntohs(dstPort), total_len);
@@ -229,6 +229,7 @@ int encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
 
 struct UdpHost *UdpProcessor::getHostInfoFromIpAndPort(uint32_t dip, uint16_t port, uint8_t proto)
 {
+    std::lock_guard<std::mutex> lock(_mutex);
     for (auto &host : _udpHostList)
     {
         if (host->localIp == dip && host->localport == port && host->protocal == proto)
