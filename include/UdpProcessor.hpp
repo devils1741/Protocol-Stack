@@ -32,6 +32,11 @@ struct UdpHost
 class UdpProcessor : public BaseNetwork
 {
 public:
+    static UdpProcessor &getInstance()
+    {
+        static UdpProcessor instance;
+        return instance;
+    }
     int createSocket(__attribute__((unused)) int domain, int type, __attribute__((unused)) int protocol);
     int nbind(int sockfd, const struct sockaddr *addr, __attribute__((unused)) socklen_t addrlen);
     int udpProcess(struct rte_mbuf *udpMbuf);
@@ -39,6 +44,14 @@ public:
     struct UdpHost *getHostInfoFromIpAndPort(uint32_t dip, uint16_t port, uint8_t proto);
     struct rte_mbuf *udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, uint8_t *data, uint16_t length);
     int encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, unsigned char *data, uint16_t total_len);
+
+private:
+    UdpProcessor() = default;
+    ~UdpProcessor() = default;
+    UdpProcessor(const UdpProcessor &) = delete;
+    UdpProcessor &operator=(const UdpProcessor &) = delete;
+    UdpProcessor(UdpProcessor &&) = delete;
+    UdpProcessor &operator=(UdpProcessor &&) = delete;
 
 private:
     static std::list<UdpHost *> _udpHostList;  ///< 本地主机信息

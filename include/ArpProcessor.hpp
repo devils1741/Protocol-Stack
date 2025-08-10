@@ -14,9 +14,11 @@
 class ArpProcessor : public Processor
 {
 public:
-    ArpProcessor();
-    ~ArpProcessor();
-
+    static ArpProcessor &getInstance()
+    {
+        static ArpProcessor instance;
+        return instance;
+    }
     struct rte_mbuf *sendArpPacket(struct rte_mempool *mbuf_pool, uint16_t opcode, uint8_t *srcMac, uint32_t srcIp,
                                    uint8_t *dstMac, uint32_t dstIp);
     int handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mbufs, struct inout_ring *ring);
@@ -36,6 +38,14 @@ public:
 
 protected:
     int setNextProcessor(std::shared_ptr<Processor> nextProcessor) override;
+
+private:
+    ArpProcessor();
+    ~ArpProcessor();
+    ArpProcessor(const ArpProcessor &) = delete;
+    ArpProcessor &operator=(const ArpProcessor &) = delete;
+    ArpProcessor(ArpProcessor &&) = delete;
+    ArpProcessor &operator=(ArpProcessor &&) = delete;
 
 private:
     const uint8_t defaultArpMac[RTE_ETHER_ADDR_LEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; ///< 默认的广播MAC地址

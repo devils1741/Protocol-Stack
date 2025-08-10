@@ -22,9 +22,6 @@ int pkt_process(void *arg)
         return -1;
     }
     const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
-    ArpProcessor arpProcessor;
-    IcmpProcessor icmpProcessor;
-    UdpProcessor udpProcessor;
 
     while (1)
     {
@@ -39,7 +36,7 @@ int pkt_process(void *arg)
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
                 SPDLOG_INFO("Received ARP packet ether_type={}", ehdr->ether_type);
-                arpProcessor.handlePacket(mbufPool, mbufs[i], ring);
+                ArpProcessor::getInstance().handlePacket(mbufPool, mbufs[i], ring);
                 continue;
             }
 
@@ -56,7 +53,8 @@ int pkt_process(void *arg)
             if (iphdr->next_proto_id == IPPROTO_UDP)
             {
                 SPDLOG_INFO("Received UDP packet. next_proto_id={}", iphdr->next_proto_id);
-                udpProcessor.udpProcess(mbufs[i]);
+                UdpProcessor::getInstance().udpProcess(mbufs[i]);
+                UdpProcessor::getInstance().udpOut(mbufPool);
             }
 
             if (iphdr->next_proto_id == IPPROTO_TCP)
@@ -67,7 +65,7 @@ int pkt_process(void *arg)
             if (iphdr->next_proto_id == IPPROTO_ICMP)
             {
                 SPDLOG_INFO("Received ICMP packet. next_proto_id={}", iphdr->next_proto_id);
-                icmpProcessor.handlePacket(mbufPool, mbufs[i], ring);
+                IcmpProcessor::getInstance().handlePacket(mbufPool, mbufs[i], ring);
             }
         }
     }

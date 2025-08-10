@@ -131,7 +131,6 @@ int UdpProcessor::udpProcess(struct rte_mbuf *udpMbuf)
 
 int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
 {
-    ArpProcessor arpProcessor;
     struct inout_ring *ring = Ring::getSingleton().getRing();
     for (auto &host : _udpHostList)
     {
@@ -143,8 +142,8 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
         uint8_t *dstMac = ArpTable::getInstance().search(ol->dip);
         if (dstMac == NULL)
         {
-            arpProcessor.getDefaultArpMac(dstMac);
-            struct rte_mbuf *arpBuf = arpProcessor.sendArpPacket(mbuf_pool, RTE_ARP_OP_REQUEST,
+            ArpProcessor::getInstance().getDefaultArpMac(dstMac);
+            struct rte_mbuf *arpBuf = ArpProcessor::getInstance().sendArpPacket(mbuf_pool, RTE_ARP_OP_REQUEST,
                                                                  ConfigManager::getInstance().getSrcMac(), ol->sip,
                                                                  dstMac, ol->dip);
 
