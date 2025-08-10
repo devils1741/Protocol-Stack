@@ -1,6 +1,7 @@
 #include "PktProcess.hpp"
 #include "ArpProcessor.hpp"
 #include "IcmpProcessor.hpp"
+#include "UdpProcessor.hpp"
 #include "Logger.hpp"
 #include "ConfigManager.hpp"
 
@@ -23,6 +24,7 @@ int pkt_process(void *arg)
     const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
     ArpProcessor arpProcessor;
     IcmpProcessor icmpProcessor;
+    UdpProcessor udpProcessor;
 
     while (1)
     {
@@ -54,6 +56,7 @@ int pkt_process(void *arg)
             if (iphdr->next_proto_id == IPPROTO_UDP)
             {
                 SPDLOG_INFO("Received UDP packet. next_proto_id={}", iphdr->next_proto_id);
+                udpProcessor.udpProcess(mbufs[i]);
             }
 
             if (iphdr->next_proto_id == IPPROTO_TCP)
