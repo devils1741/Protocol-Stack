@@ -8,7 +8,7 @@
 #include "DpdkManager.hpp"
 #include "Ring.hpp"
 #include "PktProcess.hpp"
-
+#include "UdpHost.hpp"
 #include "Arp.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
@@ -69,6 +69,9 @@ int main(int argc, char **argv)
         .mbufPool = dpdkManager->getMbufPool(),
         .ring = ring};
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
+
+    lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
+	rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
 
     // 设置接收队列和发送队列
     while (1)

@@ -21,13 +21,13 @@ int BaseNetwork::allocFdFromBitMap()
     return -1;
 }
 
-int BaseNetwork::searchFdFromBitMap(int &fd)
+int BaseNetwork::searchFdFromBitMap(int fd)
 {
     int result = _fdTable[int(fd / 8)] & (0x1 << fd % 8);
     return result;
 }
 
-int BaseNetwork::freeFdFromBitMap(int &fd)
+int BaseNetwork::freeFdFromBitMap(int fd)
 {
     if (fd < DEFAULT_FD_NUM || fd >= MAX_FD_COUNT)
         return -1;

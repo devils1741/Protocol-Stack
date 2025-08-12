@@ -36,6 +36,7 @@ add_executable(ProtocolStack
         src/Util.cpp
         src/BaseNetwork.cpp
         src/UdpProcessor.cpp
+        src/UdpHost.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

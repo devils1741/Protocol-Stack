@@ -5,74 +5,8 @@
 #include "Utils.hpp"
 #include "ArpProcessor.hpp"
 #include "Ring.hpp"
+#include "UdpHost.hpp"
 
-std::list<UdpHost *> UdpProcessor::_udpHostList;
-
-int UdpProcessor::createSocket(__attribute__((unused)) int domain, int type, __attribute__((unused)) int protocol)
-{
-    int fd = allocFdFromBitMap();
-    const int RING_SIZE = ConfigManager::getInstance().getRingSize();
-
-    if (type == SOCK_DGRAM)
-    {
-        struct UdpHost *udpHost = static_cast<UdpHost *>(rte_malloc("UdpHost", sizeof(struct UdpHost), 0));
-        if (udpHost == nullptr)
-        {
-            return -1;
-        }
-        memset(udpHost, 0, sizeof(struct UdpHost));
-        udpHost->fd = fd;
-        udpHost->protocal = IPPROTO_UDP;
-        udpHost->rcvbuf = rte_ring_create("recv buffer", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-        if (udpHost->rcvbuf == NULL)
-        {
-            rte_free(udpHost);
-            return -1;
-        }
-
-        udpHost->sndbuf = rte_ring_create("send buffer", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-        if (udpHost->sndbuf == NULL)
-        {
-            rte_ring_free(udpHost->rcvbuf);
-            rte_free(udpHost);
-            return -1;
-        }
-        pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
-        rte_memcpy(&udpHost->cond, &blank_cond, sizeof(pthread_cond_t));
-
-        pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
-        rte_memcpy(&udpHost->mutex, &blank_mutex, sizeof(pthread_mutex_t));
-
-        _udpHostList.emplace_back(udpHost);
-    }
-    else
-    {
-        return -1;
-    }
-    return fd;
-}
-
-int UdpProcessor::nbind(int sockfd, const struct sockaddr *addr, __attribute__((unused)) socklen_t addrlen)
-{
-    int isExist = searchFdFromBitMap(sockfd);
-    if (isExist == 0)
-    {
-        return -1; // 文件描述符不存在
-    }
-    for (auto &it : _udpHostList)
-    {
-        if (it->fd == sockfd)
-        {
-            struct UdpHost *host = (struct UdpHost *)it;
-            const struct sockaddr_in *laddr = (const struct sockaddr_in *)addr;
-            host->localport = laddr->sin_port;
-            rte_memcpy(&host->localIp, &laddr->sin_addr.s_addr, sizeof(uint32_t));
-            rte_memcpy(host->localMac, ConfigManager::getInstance().getSrcMac(), RTE_ETHER_ADDR_LEN);
-            return 0; // 成功绑定
-        }
-    }
-    return -1;
-}
 
 int UdpProcessor::udpProcess(struct rte_mbuf *udpMbuf)
 {
@@ -84,7 +18,7 @@ int UdpProcessor::udpProcess(struct rte_mbuf *udpMbuf)
     SPDLOG_INFO("UDP Processing Packet ---> src: {}, dst: {}, src_port: {}, dst_port: {}",
                 inet_ntoa(addr), convert_uint32_to_ip(iphdr->dst_addr), ntohs(udphdr->src_port), ntohs(udphdr->dst_port));
 
-    struct UdpHost *host = getHostInfoFromIpAndPort(iphdr->dst_addr, udphdr->dst_port, iphdr->next_proto_id);
+    struct UdpHost *host = UdpServerManager::getInstance().getHostInfoFromIpAndPort(iphdr->dst_addr, udphdr->dst_port, iphdr->next_proto_id);
     if (host == nullptr)
     {
         SPDLOG_INFO("UDP host not found for IP: {}, Port: {}",
@@ -132,6 +66,7 @@ int UdpProcessor::udpProcess(struct rte_mbuf *udpMbuf)
 int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
 {
     struct inout_ring *ring = Ring::getSingleton().getRing();
+    std::list<UdpHost*> _udpHostList = UdpServerManager::getInstance().getUdpHostList();
     for (auto &host : _udpHostList)
     {
         struct offload *ol;
@@ -142,17 +77,18 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
         uint8_t *dstMac = ArpTable::getInstance().search(ol->dip);
         if (dstMac == NULL)
         {
+            uint8_t *dstMac = new uint8_t[RTE_ETHER_ADDR_LEN];
+            SPDLOG_INFO("MAC not found for IP: {}, Port: {}",
+                        convert_uint32_to_ip(ol->dip), ntohs(ol->dport));
             ArpProcessor::getInstance().getDefaultArpMac(dstMac);
             struct rte_mbuf *arpBuf = ArpProcessor::getInstance().sendArpPacket(mbuf_pool, RTE_ARP_OP_REQUEST,
                                                                  ConfigManager::getInstance().getSrcMac(), ol->sip,
                                                                  dstMac, ol->dip);
-
             rte_ring_mp_enqueue_burst(ring->out, (void **)&arpBuf, 1, NULL);
             rte_ring_mp_enqueue(host->sndbuf, ol);
         }
         else
         {
-
             struct rte_mbuf *udpbuf = udpPkt(mbuf_pool, ol->sip, ol->dip, ol->sport, ol->dport,
                                              host->localMac, dstMac, ol->data, ol->length);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&udpbuf, 1, NULL);
@@ -188,7 +124,7 @@ int UdpProcessor::encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
                                   uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
                                   unsigned char *data, uint16_t total_len)
 {
-    SPDLOG_INFO("ng_encode_udp_apppkt: sIp: {}, dIp: {}, sPort: {}, dPort: {}, total_len: {}",
+    SPDLOG_INFO("encodeUdpApppkt: sIp: {}, dIp: {}, sPort: {}, dPort: {}, total_len: {}",
                 convert_uint32_to_ip(srcIp), convert_uint32_to_ip(dstIp), ntohs(srcPort), ntohs(dstPort), total_len);
 
     // 1 ethhdr
@@ -224,17 +160,4 @@ int UdpProcessor::encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
     udp->dgram_cksum = rte_ipv4_udptcp_cksum(ip, udp);
 
     return 0;
-}
-
-struct UdpHost *UdpProcessor::getHostInfoFromIpAndPort(uint32_t dip, uint16_t port, uint8_t proto)
-{
-    std::lock_guard<std::mutex> lock(_mutex);
-    for (auto &host : _udpHostList)
-    {
-        if (host->localIp == dip && host->localport == port && host->protocal == proto)
-        {
-            return host;
-        }
-    }
-    return nullptr;
 }
