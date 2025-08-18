@@ -32,7 +32,7 @@ int IcmpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *m
                                                     icmp_data,
                                                     icmp_len);
 
-            rte_ring_mp_enqueue_burst(ring->out, (void **)&txbuf, 1, NULL);
+            rte_ring_mp_enqueue_burst(ring->out, (void **)&txbuf, 1, nullptr);
             rte_pktmbuf_free(mbuf);
         }
     }

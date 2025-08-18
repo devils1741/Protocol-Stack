@@ -108,7 +108,7 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
                 struct rte_mbuf *arpbuf = sendArpPacket(mbufPool, RTE_ARP_OP_REPLY,
                                                         SRC_MAC, ahdr->arp_data.arp_tip,
                                                         ahdr->arp_data.arp_sha.addr_bytes, ahdr->arp_data.arp_sip);
-                rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, NULL);
+                rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, nullptr);
             }
             else if (ahdr->arp_opcode == rte_cpu_to_be_16(RTE_ARP_OP_REPLY))
             {

@@ -6,7 +6,7 @@ DPDKManager::DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id) 
 
     _mbufPool = rte_pktmbuf_pool_create(_name.c_str(), _NUM_MBUFS,
                                         0, 0, RTE_MBUF_DEFAULT_BUF_SIZE, _socket_id);
-    if (_mbufPool == NULL)
+    if (_mbufPool == nullptr)
     {
         SPDLOG_ERROR("Could not create mbuf pool");
         rte_exit(EXIT_FAILURE, "Could not create mbuf pool\n");
@@ -51,7 +51,7 @@ int DPDKManager::initPort(int portID, rte_eth_conf port_conf_default)
     rte_eth_dev_configure(portID, num_rx_queues, num_tx_queues, &port_conf);
     //设置接收队列
     if (rte_eth_rx_queue_setup(portID, 0, 1024,
-                               rte_eth_dev_socket_id(portID), NULL, _mbufPool) < 0)
+                               rte_eth_dev_socket_id(portID), nullptr, _mbufPool) < 0)
     {
         SPDLOG_ERROR("Could not setup RX queue");
         rte_exit(EXIT_FAILURE, "Could not setup RX queue\n");

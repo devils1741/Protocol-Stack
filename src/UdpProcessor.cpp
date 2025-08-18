@@ -44,7 +44,7 @@ int UdpProcessor::udpProcess(struct rte_mbuf *udpMbuf)
     ol->length = ntohs(udphdr->dgram_len);
 
     ol->data = (unsigned char *)rte_malloc("unsigned char*", ol->length - sizeof(struct rte_udp_hdr), 0);
-    if (ol->data == NULL)
+    if (ol->data == nullptr)
     {
         rte_pktmbuf_free(udpMbuf);
         rte_free(ol);
@@ -75,7 +75,7 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
             continue;
 
         uint8_t *dstMac = ArpTable::getInstance().search(ol->dip);
-        if (dstMac == NULL)
+        if (dstMac == nullptr)
         {
             uint8_t *dstMac = new uint8_t[RTE_ETHER_ADDR_LEN];
             SPDLOG_INFO("MAC not found for IP: {}, Port: {}",
@@ -84,14 +84,14 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
             struct rte_mbuf *arpBuf = ArpProcessor::getInstance().sendArpPacket(mbuf_pool, RTE_ARP_OP_REQUEST,
                                                                  ConfigManager::getInstance().getSrcMac(), ol->sip,
                                                                  dstMac, ol->dip);
-            rte_ring_mp_enqueue_burst(ring->out, (void **)&arpBuf, 1, NULL);
+            rte_ring_mp_enqueue_burst(ring->out, (void **)&arpBuf, 1, nullptr);
             rte_ring_mp_enqueue(host->sndbuf, ol);
         }
         else
         {
             struct rte_mbuf *udpbuf = udpPkt(mbuf_pool, ol->sip, ol->dip, ol->sport, ol->dport,
                                              host->localMac, dstMac, ol->data, ol->length);
-            rte_ring_mp_enqueue_burst(ring->out, (void **)&udpbuf, 1, NULL);
+            rte_ring_mp_enqueue_burst(ring->out, (void **)&udpbuf, 1, nullptr);
         }
     }
 

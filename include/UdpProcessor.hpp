@@ -1,5 +1,5 @@
-#ifndef UDP__PROCESSOR
-#define UDP__PROCESSOR
+#ifndef __UDP__PROCESSOR__
+#define __UDP__PROCESSOR__
 #include "BaseNetwork.hpp"
 #include <arpa/inet.h>
 #include "Processor.hpp"

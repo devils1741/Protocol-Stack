@@ -12,4 +12,6 @@ struct PktProcessParams
 int pkt_process(void *arg);
 
 int udp_server(void *arg);
+
+int tcp_server(void *arg);
 #endif

@@ -5,6 +5,7 @@
 #include "UdpHost.hpp"
 #include "Logger.hpp"
 #include "ConfigManager.hpp"
+#include "TcpHost.hpp"
 
 int pkt_process(void *arg)
 {
@@ -27,7 +28,7 @@ int pkt_process(void *arg)
     while (1)
     {
         struct rte_mbuf *mbufs[BURST_SIZE];
-        unsigned num_recvd = rte_ring_mc_dequeue_burst(ring->in, (void **)mbufs, BURST_SIZE, NULL);
+        unsigned num_recvd = rte_ring_mc_dequeue_burst(ring->in, (void **)mbufs, BURST_SIZE, nullptr);
         unsigned i = 0;
         for (i = 0; i < num_recvd; i++)
         {
@@ -88,4 +89,22 @@ int udp_server(void *arg)
         return -1;
     }
     return UdpServerManager::getInstance().udpServer(arg);
+}
+
+int tcp_server(void *arg)
+{
+    SPDLOG_INFO("TCP server thread started. Current lcore_id={}", rte_lcore_id());
+    struct PktProcessParams *pktParams = (struct PktProcessParams *)arg;
+    if (pktParams == nullptr)
+    {
+        SPDLOG_ERROR("Packet processing parameters are null");
+        return -1;
+    }
+    rte_mempool *mbufPool = pktParams->mbufPool;
+    if (mbufPool == nullptr)
+    {
+        SPDLOG_ERROR("Mbuf pool is null");
+        return -1;
+    }
+    return TcpServerManager::getInstance().tcpServer(arg);
 }

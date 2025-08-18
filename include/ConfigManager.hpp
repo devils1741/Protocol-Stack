@@ -30,6 +30,7 @@ public:
         // 读取配置
         _num_mbufs = _json["NUM_MBUFS"].get<int>();
         _burst_size = _json["BURST_SIZE"].get<int>();
+        _buffer_size = _json["BUFFER_SIZE"].get<int>();
         _ring_size = _json["RING_SIZE"].get<int>();
         _timer_resolution_cycles = _json["TIMER_RESOLUTION_CYCLES"].get<unsigned long long>();
         _local_ip = _json["LOCAL_IP"].get<std::string>();
@@ -57,6 +58,7 @@ public:
     // 获取配置值
     uint32_t getNumMbufs() const { return _num_mbufs; }
     uint32_t getBurstSize() const { return _burst_size; }
+    uint32_t getBufferSize() const { return _buffer_size; }
     uint32_t getRingSize() const { return _ring_size; }
     std::string getLocalIp() const { return _local_ip; }
     uint32_t getLocalAddr() const { return _local_addr; }
@@ -77,6 +79,7 @@ private:
     uint32_t _num_mbufs = 0;
     uint32_t _burst_size = 0;
     uint32_t _ring_size = 0;
+    uint32_t _buffer_size = 0;
     unsigned long long _timer_resolution_cycles = 0;
     std::string _local_ip;
     uint32_t _local_addr = 0;

@@ -21,7 +21,7 @@ struct UdpHost *UdpServerManager::getHostInfoFromIpAndPort(uint32_t dip, uint16_
 
 int UdpServerManager::nsocket(__attribute__((unused)) int domain, int type, __attribute__((unused)) int protocol)
 {
-    SPDLOG_INFO("create socket,domain:{}, type: {}, protocol {}", domain, type, protocol);
+    SPDLOG_INFO("create udp socket,domain:{}, type: {}, protocol {}", domain, type, protocol);
     int fd = allocFdFromBitMap();
     const int RING_SIZE = ConfigManager::getInstance().getRingSize();
 
@@ -36,14 +36,14 @@ int UdpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
         udpHost->fd = fd;
         udpHost->protocal = IPPROTO_UDP;
         udpHost->rcvbuf = rte_ring_create("recv buffer", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-        if (udpHost->rcvbuf == NULL)
+        if (udpHost->rcvbuf == nullptr)
         {
             rte_free(udpHost);
             return -1;
         }
 
         udpHost->sndbuf = rte_ring_create("send buffer", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
-        if (udpHost->sndbuf == NULL)
+        if (udpHost->sndbuf == nullptr)
         {
             rte_ring_free(udpHost->rcvbuf);
             rte_free(udpHost);
@@ -91,7 +91,7 @@ int UdpServerManager::nclose(int fd)
 {
     SPDLOG_INFO("Close fd: {}", fd);
     void *hostinfo = getHostInfoFromFd(fd);
-    if (hostinfo == NULL)
+    if (hostinfo == nullptr)
         return -1;
     struct UdpHost *host = (struct UdpHost *)hostinfo;
     _udpHostList.remove(host);
@@ -150,9 +150,8 @@ int UdpServerManager::udpServer(__attribute__((unused)) void *arg)
 ssize_t UdpServerManager::nrecvfrom(int sockfd, void *buf, size_t len, __attribute__((unused)) int flags,
                                     struct sockaddr *src_addr, __attribute__((unused)) socklen_t *addrlen)
 {
-
     struct UdpHost *host = getHostInfoFromFd(sockfd);
-    if (host == NULL)
+    if (host == nullptr)
         return -1;
 
     struct offload *ol = nullptr;
@@ -197,13 +196,13 @@ ssize_t UdpServerManager::nsendto(int sockfd, const void *buf, size_t len, __att
 {
 
     struct UdpHost *host = getHostInfoFromFd(sockfd);
-    if (host == NULL)
+    if (host == nullptr)
         return -1;
 
     const struct sockaddr_in *daddr = (const struct sockaddr_in *)dest_addr;
 
     struct offload *ol = (struct offload *)rte_malloc("offload", sizeof(struct offload), 0);
-    if (ol == NULL)
+    if (ol == nullptr)
         return -1;
 
     ol->dip = daddr->sin_addr.s_addr;
@@ -217,7 +216,7 @@ ssize_t UdpServerManager::nsendto(int sockfd, const void *buf, size_t len, __att
     SPDLOG_INFO("Send packet to {}:{}", inet_ntoa(addr), ntohs(ol->dport));
 
     ol->data = (unsigned char *)rte_malloc("unsigned char *", len, 0);
-    if (ol->data == NULL)
+    if (ol->data == nullptr)
     {
         rte_free(ol);
         return -1;
