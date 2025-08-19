@@ -71,11 +71,14 @@ int main(int argc, char **argv)
     struct PktProcessParams pktParams = {
         .mbufPool = dpdkManager->getMbufPool(),
         .ring = ring};
+    
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
 
+    // 启动UDP服务
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
 	rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
 
+    // 启动TCP服务
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
 	rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
 

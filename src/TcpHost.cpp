@@ -16,7 +16,7 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
     int listenfd = nsocket(AF_INET, SOCK_STREAM, 0);
     if (listenfd == -1)
     {
-        SPDLOG_INFO("tcp socket create failed");
+        SPDLOG_ERROR("tcp socket create failed");
         return -1;
     }
     struct sockaddr_in servaddr;
@@ -24,8 +24,8 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
     servaddr.sin_port = htons(9999);
-    SPDLOG_INFO("TCP server bind to port: {}", ntohs(servaddr.sin_port));
     nbind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
+    SPDLOG_INFO("TCP server bind to port: {}", ntohs(servaddr.sin_port));
     nlisten(listenfd, 10);
     int BUFFER_SIZE = ConfigManager::getInstance().getBufferSize();
     while (1)
@@ -108,7 +108,10 @@ int TcpServerManager::nlisten(int sockfd, __attribute__((unused)) int backlog)
 {
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
+    {
+        SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
         return -1;
+    }
     ts->status = TCP_STATUS::TCP_STATUS_LISTEN;
     return 0;
 }
@@ -118,7 +121,10 @@ int TcpServerManager::nbind(int sockfd, const struct sockaddr *addr, __attribute
     SPDLOG_INFO("Bind socket fd: {}, addr: {}", sockfd, sockaddr_in_to_string(*(const struct sockaddr_in *)addr));
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
+    {
+        SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
         return -1;
+    }
     const struct sockaddr_in *laddr = (const struct sockaddr_in *)addr;
     ts->dstPort = laddr->sin_port;
     rte_memcpy(&ts->dstIp, &laddr->sin_addr.s_addr, sizeof(uint32_t));
@@ -174,23 +180,22 @@ ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__
 
 int TcpServerManager::naccept(int sockfd, struct sockaddr *addr, __attribute__((unused)) socklen_t *addrlen)
 {
+    SPDLOG_INFO("Alloc FD ...");
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
         return -1;
 
-    struct TcpStream *apt = nullptr;
     pthread_mutex_lock(&ts->mutex);
-    while ((apt = TcpTable::getInstance().getTcpStreamByPort(ts->dstPort)) == nullptr)
+    while ((ts = TcpTable::getInstance().getTcpStreamByPort(ts->dstPort)) == nullptr)
     {
         pthread_cond_wait(&ts->cond, &ts->mutex);
     }
     pthread_mutex_unlock(&ts->mutex);
-    apt->fd = allocFdFromBitMap();
+    ts->fd = allocFdFromBitMap();
     struct sockaddr_in *saddr = (struct sockaddr_in *)addr;
-    saddr->sin_port = apt->srcPort;
-    rte_memcpy(&saddr->sin_addr.s_addr, &apt->srcIp, sizeof(uint32_t));
-    return apt->fd;
-    return -1;
+    saddr->sin_port = ts->srcPort;
+    rte_memcpy(&saddr->sin_addr.s_addr, &ts->srcIp, sizeof(uint32_t));
+    return ts->fd;
 }
 
 ssize_t TcpServerManager::nsend(int sockfd, const void *buf, size_t len, __attribute__((unused)) int flags)
@@ -265,7 +270,7 @@ int TcpServerManager::nclose(int fd)
         freeFdFromBitMap(fd);
     }
     else
-    { 
+    {
         TcpTable::getInstance().removeStream(ts);
         rte_free(ts);
     }
