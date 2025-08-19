@@ -6,6 +6,7 @@
 #include "Logger.hpp"
 #include "ConfigManager.hpp"
 #include "TcpHost.hpp"
+#include "TcpProcessor.hpp"
 
 int pkt_process(void *arg)
 {
@@ -62,6 +63,7 @@ int pkt_process(void *arg)
             if (iphdr->next_proto_id == IPPROTO_TCP)
             {
                 SPDLOG_INFO("Received TCP packet. next_proto_id={}", iphdr->next_proto_id);
+                TcpProcessor::getInstance().tcpProcess(mbufs[i]);
             }
 
             if (iphdr->next_proto_id == IPPROTO_ICMP)

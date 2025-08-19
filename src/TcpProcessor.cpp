@@ -20,30 +20,33 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
     tcphdr->cksum = 0;
     uint16_t cksum = rte_ipv4_udptcp_cksum(iphdr, tcphdr);
 
-#if 1 //
     if (cksum != tcpcksum)
     {
-        printf("cksum: %x, tcp cksum: %x\n", cksum, tcpcksum);
+        SPDLOG_ERROR("cksum:{}, tcp cksum: {}", cksum, tcpcksum);
         return -1;
     }
-#endif
 
     struct TcpStream *ts = TcpTable::getInstance().getTcpStream(iphdr->src_addr, iphdr->dst_addr, tcphdr->src_port, tcphdr->dst_port);
     if (ts == nullptr)
     {
+        SPDLOG_ERROR("Create TcpStream failed");
         return -2;
     }
 
     switch (ts->status)
     {
-
     case TCP_STATUS::TCP_STATUS_CLOSED: // client
         break;
 
     case TCP_STATUS::TCP_STATUS_LISTEN: // server
-        tcpHandleListen(ts, tcphdr, iphdr);
+    {
+        int code = tcpHandleListen(ts, tcphdr, iphdr);
+        if (code != 0)
+        {
+            SPDLOG_ERROR("TCP Listen failed. code={}", code);
+        }
         break;
-
+    }
     case TCP_STATUS::TCP_STATUS_SYN_RCVD: // server
         tcpHandleSynRcvd(ts, tcphdr);
         break;
@@ -55,7 +58,6 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
     { // server | client
         int tcplen = ntohs(iphdr->total_length) - sizeof(struct rte_ipv4_hdr);
         tcpHandleEstablished(ts, tcphdr, tcplen);
-
         break;
     }
     case TCP_STATUS::TCP_STATUS_FIN_WAIT_1: //  ~client
@@ -84,24 +86,31 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
 
 int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp_hdr *tcphdr, struct rte_ipv4_hdr *iphdr)
 {
+    SPDLOG_INFO("TCP Listen .... ");
     if (tcphdr->tcp_flags & RTE_TCP_SYN_FLAG)
     {
-        // ts --> listenfd
         if (listenStream->status == TCP_STATUS::TCP_STATUS_LISTEN)
         {
-
             struct TcpStream *ts = TcpProcessor::tcpCreateStream(iphdr->src_addr, iphdr->dst_addr, tcphdr->src_port, tcphdr->dst_port);
+            if (ts == nullptr)
+            {
+                SPDLOG_ERROR("Create TcpFragment failed");
+                return -1;
+            }
             TcpTable::getInstance().addTcpStream(ts);
 
-            struct TcpFragment *tf = (struct TcpFragment *)rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0);
+            struct TcpFragment *tf = static_cast<struct TcpFragment *>(rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0));
             if (tf == nullptr)
+            {
+                SPDLOG_ERROR("Create TcpFragment failed");
                 return -1;
+            }
             memset(tf, 0, sizeof(struct TcpFragment));
 
             tf->srcPort = tcphdr->dst_port;
             tf->dstPort = tcphdr->src_port;
 
-            SPDLOG_INFO("tcp listening src: {}:{} dst: {}:{}", convert_uint32_to_ip(ts->srcIp), ntohs(tcphdr->src_port),
+            SPDLOG_INFO("TCP listening src: {}:{} dst: {}:{}", convert_uint32_to_ip(ts->srcIp), ntohs(tcphdr->src_port),
                         convert_uint32_to_ip(ts->dstIp), ntohs(tcphdr->dst_port));
             tf->seqnum = ts->sndNxt;
             tf->acknum = ntohl(tcphdr->sent_seq) + 1;
@@ -123,8 +132,8 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
 }
 
 struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort)
-{ // proto
-
+{ 
+    SPDLOG_INFO("Create TCP Stream ....");
     struct TcpStream *ts = static_cast<struct TcpStream *>(rte_malloc("TcpStream", sizeof(struct TcpStream), 0));
     if (ts == nullptr)
         return nullptr;
@@ -158,6 +167,7 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
 
 int TcpProcessor::tcpHandleSynRcvd(struct TcpStream *stream, struct rte_tcp_hdr *tcphdr)
 {
+    SPDLOG_INFO("Handle TCP SynRcvd ...");
     if (tcphdr->tcp_flags & RTE_TCP_ACK_FLAG)
     {
         if (stream->status == TCP_STATUS::TCP_STATUS_SYN_RCVD)
@@ -185,11 +195,11 @@ int TcpProcessor::tcpHandleSynRcvd(struct TcpStream *stream, struct rte_tcp_hdr 
 
 int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_hdr *tcphdr, int tcplen)
 {
-
+    SPDLOG_INFO("TCP Handle Established ...");
     if (tcphdr->tcp_flags & RTE_TCP_SYN_FLAG)
     {
         SPDLOG_INFO("TCP SYN flag received, but already established for stream {}", stream->fd);
-        return -1; // SYN flag received in established state, ignore
+        return -1;
     }
     if (tcphdr->tcp_flags & RTE_TCP_PSH_FLAG)
     {
@@ -220,7 +230,6 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
 }
 int TcpProcessor::tcpEnqueueRecvbuffer(struct TcpStream *stream, struct rte_tcp_hdr *tcphdr, int tcplen)
 {
-
     struct TcpFragment *rfragment = (struct TcpFragment *)rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0);
     if (rfragment == nullptr)
         return -1;
@@ -348,7 +357,7 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
 }
 
 struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t sip, uint32_t dip,
-                                          uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
+                                      uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +
@@ -371,7 +380,6 @@ struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t si
 int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip,
                                   uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
-
 
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +

@@ -11,8 +11,8 @@
 
 enum class TCP_STATUS
 {
-    TCP_STATUS_CLOSED = 0,
-    TCP_STATUS_LISTEN,
+    TCP_STATUS_CLOSED = 0, ///< 初始或者最终状态，连接不存在
+    TCP_STATUS_LISTEN,     ///< 服务器端的socket已经绑定端口，等待客户端连接请求
     TCP_STATUS_SYN_SENT,
     TCP_STATUS_SYN_RCVD,
     TCP_STATUS_ESTABLISHED,

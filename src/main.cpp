@@ -19,6 +19,8 @@ int main(int argc, char **argv)
 {
     initLogger();
     SPDLOG_INFO("The APP start!");
+    SPDLOG_INFO("SPDLOG_INFO LEVEL ENABLE");
+    SPDLOG_ERROR("SPDLOG_ERROR LEVEL ENABLE");
 
     ConfigManager &configManager = ConfigManager::getInstance();
     configManager.loadConfig("/repo/Protocol-Stack/config/args.json");

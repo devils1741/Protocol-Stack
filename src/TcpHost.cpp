@@ -12,16 +12,19 @@
 
 int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
 {
+    SPDLOG_INFO("TCP server thread start successed");
     int listenfd = nsocket(AF_INET, SOCK_STREAM, 0);
     if (listenfd == -1)
     {
+        SPDLOG_INFO("tcp socket create failed");
         return -1;
     }
     struct sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(struct sockaddr));
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
-    servaddr.sin_port = htons(8889);
+    servaddr.sin_port = htons(9999);
+    SPDLOG_INFO("TCP server bind to port: {}", ntohs(servaddr.sin_port));
     nbind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
     nlisten(listenfd, 10);
     int BUFFER_SIZE = ConfigManager::getInstance().getBufferSize();
@@ -36,12 +39,11 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
             int n = nrecv(connfd, buff.data(), BUFFER_SIZE, 0); // block
             if (n > 0)
             {
-                printf("recv: %s\n", buff);
+                SPDLOG_INFO("TCP recv {}", buff.data());
                 nsend(connfd, buff.data(), n, 0);
             }
             else if (n == 0)
             {
-
                 nclose(connfd);
                 break;
             }
@@ -57,9 +59,14 @@ int TcpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
 {
     SPDLOG_INFO("create tcp socket,domain:{}, type: {}, protocol {}", domain, type, protocol);
     int fd = allocFdFromBitMap();
+    if (fd == -1)
+    {
+        SPDLOG_INFO("socket fd alloc failed");
+        return -1;
+    }
     const int RING_SIZE = ConfigManager::getInstance().getRingSize();
 
-    if (type == SOCK_DGRAM)
+    if (type == SOCK_STREAM)
     {
         struct TcpStream *ts = static_cast<TcpStream *>(rte_malloc("TcpStream", sizeof(struct TcpStream), 0));
         if (ts == nullptr)
@@ -130,14 +137,12 @@ ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__
     struct TcpFragment *fragment = nullptr;
     int nb_rcv = 0;
 
-    printf("rte_ring_mc_dequeue before\n");
     pthread_mutex_lock(&ts->mutex);
     while ((nb_rcv = rte_ring_mc_dequeue(ts->rcvbuf, (void **)&fragment)) < 0)
     {
         pthread_cond_wait(&ts->cond, &ts->mutex);
     }
     pthread_mutex_unlock(&ts->mutex);
-    printf("rte_ring_mc_dequeue after\n");
 
     if (fragment->length > len)
     {
@@ -241,7 +246,7 @@ int TcpServerManager::nclose(int fd)
         if (fragment == NULL)
             return -1;
 
-        printf("nclose --> enter last ack\n");
+        SPDLOG_INFO("nclose --> enter last ack");
         fragment->data = NULL;
         fragment->length = 0;
         fragment->srcPort = ts->dstPort;
