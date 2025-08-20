@@ -64,6 +64,7 @@ int pkt_process(void *arg)
             {
                 SPDLOG_INFO("Received TCP packet. next_proto_id={}", iphdr->next_proto_id);
                 TcpProcessor::getInstance().tcpProcess(mbufs[i]);
+                TcpProcessor::getInstance().tcpOut(mbufPool);
             }
 
             if (iphdr->next_proto_id == IPPROTO_ICMP)

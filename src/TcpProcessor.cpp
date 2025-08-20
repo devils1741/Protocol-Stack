@@ -6,6 +6,7 @@
 #include "Arp.hpp"
 #include "ArpProcessor.hpp"
 #include <rte_malloc.h>
+#include <rte_errno.h>
 
 #define TCP_INITIAL_WINDOW 14600
 #define TCP_MAX_SEQ 4294967295
@@ -119,10 +120,8 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
             tf->tcp_flags = (RTE_TCP_SYN_FLAG | RTE_TCP_ACK_FLAG);
             tf->windows = TCP_INITIAL_WINDOW;
             tf->hdrlen_off = 0x50;
-
             tf->data = nullptr;
             tf->length = 0;
-
             rte_ring_mp_enqueue(ts->sndbuf, tf);
             ts->status = TCP_STATUS::TCP_STATUS_SYN_RCVD;
         }
@@ -132,7 +131,7 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
 }
 
 struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort)
-{ 
+{
     SPDLOG_INFO("Create TCP Stream ....");
     struct TcpStream *ts = static_cast<struct TcpStream *>(rte_malloc("TcpStream", sizeof(struct TcpStream), 0));
     if (ts == nullptr)
@@ -150,7 +149,20 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
 
     int RING_SIZE = ConfigManager::getInstance().getRingSize();
     ts->sndbuf = rte_ring_create("sndbuf", RING_SIZE, rte_socket_id(), 0);
+    if (ts->sndbuf == nullptr)
+    {
+        rte_free(ts);
+        SPDLOG_ERROR("Failed to create sndbuf ring. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
+        return nullptr;
+    }
     ts->rcvbuf = rte_ring_create("rcvbuf", RING_SIZE, rte_socket_id(), 0);
+    if (ts->rcvbuf == nullptr)
+    {
+        rte_ring_free(ts->sndbuf);
+        rte_free(ts);
+        SPDLOG_ERROR("Failed to create rcvbuf ring. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
+        return nullptr;
+    }
 
     uint32_t next_seed = time(nullptr);
     ts->sndNxt = rand_r(&next_seed) % TCP_MAX_SEQ;

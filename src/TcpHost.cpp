@@ -34,12 +34,13 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
         socklen_t len = sizeof(client);
         std::vector<char> buff(BUFFER_SIZE);
         int connfd = naccept(listenfd, (struct sockaddr *)&client, &len);
+        SPDLOG_INFO("FD:{}", connfd);
         while (1)
         {
             int n = nrecv(connfd, buff.data(), BUFFER_SIZE, 0); // block
             if (n > 0)
             {
-                SPDLOG_INFO("TCP recv {}", buff.data());
+                SPDLOG_INFO("TCP recv data: {}", buff.data());
                 nsend(connfd, buff.data(), n, 0);
             }
             else if (n == 0)
@@ -138,42 +139,48 @@ ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__
     ssize_t length = 0;
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
+    {
+        SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
         return -1;
+    }
 
-    struct TcpFragment *fragment = nullptr;
+    struct TcpFragment *tf = nullptr;
     int nb_rcv = 0;
 
     pthread_mutex_lock(&ts->mutex);
-    while ((nb_rcv = rte_ring_mc_dequeue(ts->rcvbuf, (void **)&fragment)) < 0)
+    while ((nb_rcv = rte_ring_mc_dequeue(ts->rcvbuf, (void **)&tf)) < 0)
     {
         pthread_cond_wait(&ts->cond, &ts->mutex);
     }
     pthread_mutex_unlock(&ts->mutex);
 
-    if (fragment->length > len)
+    if (tf->length > len)
     {
-        rte_memcpy(buf, fragment->data, len);
+        SPDLOG_INFO("Received TCP fragment length is larger than buffer length, len: {}, tf->length: {}", len, tf->length);
+        rte_memcpy(buf, tf->data, len);
         uint32_t i = 0;
-        for (i = 0; i < fragment->length - len; i++)
+        for (i = 0; i < tf->length - len; i++)
         {
-            fragment->data[i] = fragment->data[len + i];
+            tf->data[i] = tf->data[len + i];
         }
-        fragment->length = fragment->length - len;
-        length = fragment->length;
-        rte_ring_mp_enqueue(ts->rcvbuf, fragment);
+        tf->length = tf->length - len;
+        length = tf->length;
+        rte_ring_mp_enqueue(ts->rcvbuf, tf);
     }
-    else if (fragment->length == 0)
+    else if (tf->length == 0)
     {
-        rte_free(fragment);
+        SPDLOG_INFO("Received empty TCP fragment, free it");
+        rte_free(tf);
         return 0;
     }
     else
     {
-        rte_memcpy(buf, fragment->data, fragment->length);
-        length = fragment->length;
-        rte_free(fragment->data);
-        fragment->data = nullptr;
-        rte_free(fragment);
+        SPDLOG_INFO("Received TCP fragment length: {}, copy to buffer", tf->length);
+        rte_memcpy(buf, tf->data, tf->length);
+        length = tf->length;
+        rte_free(tf->data);
+        tf->data = nullptr;
+        rte_free(tf);
     }
     return length;
 }
