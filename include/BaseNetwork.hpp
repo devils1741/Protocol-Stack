@@ -22,6 +22,8 @@ private:
     BaseNetwork &operator=(const BaseNetwork &) = delete; ///< 禁止赋值操作
     BaseNetwork(BaseNetwork &&) = delete;                 ///< 禁止移动构造
     BaseNetwork &operator=(BaseNetwork &&) = delete;      ///< 禁止移动赋值
+private:
+    static std::mutex fdTableMutex;
 };
 
 #endif

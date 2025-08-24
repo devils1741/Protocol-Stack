@@ -78,8 +78,7 @@ int UdpProcessor::udpOut(struct rte_mempool *mbuf_pool)
         if (dstMac == nullptr)
         {
             uint8_t *dstMac = new uint8_t[RTE_ETHER_ADDR_LEN];
-            SPDLOG_INFO("MAC not found for IP: {}, Port: {}",
-                        convert_uint32_to_ip(ol->dip), ntohs(ol->dport));
+            SPDLOG_INFO("MAC not found for IP: {}, Port: {}", convert_uint32_to_ip(ol->dip), ntohs(ol->dport));
             ArpProcessor::getInstance().getDefaultArpMac(dstMac);
             struct rte_mbuf *arpBuf = ArpProcessor::getInstance().sendArpPacket(mbuf_pool, RTE_ARP_OP_REQUEST,
                                                                  ConfigManager::getInstance().getSrcMac(), ol->sip,
@@ -124,7 +123,7 @@ int UdpProcessor::encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
                                   uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac,
                                   unsigned char *data, uint16_t total_len)
 {
-    SPDLOG_INFO("encodeUdpApppkt: sIp: {}, dIp: {}, sPort: {}, dPort: {}, total_len: {}",
+    SPDLOG_INFO("encodeUdpApppkt: srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, total_len: {}",
                 convert_uint32_to_ip(srcIp), convert_uint32_to_ip(dstIp), ntohs(srcPort), ntohs(dstPort), total_len);
 
     // 1 ethhdr

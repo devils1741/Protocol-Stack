@@ -57,14 +57,12 @@ int pkt_process(void *arg)
             {
                 SPDLOG_INFO("Received UDP packet. next_proto_id={}", iphdr->next_proto_id);
                 UdpProcessor::getInstance().udpProcess(mbufs[i]);
-                UdpProcessor::getInstance().udpOut(mbufPool);
             }
 
             if (iphdr->next_proto_id == IPPROTO_TCP)
             {
                 SPDLOG_INFO("Received TCP packet. next_proto_id={}", iphdr->next_proto_id);
                 TcpProcessor::getInstance().tcpProcess(mbufs[i]);
-                TcpProcessor::getInstance().tcpOut(mbufPool);
             }
 
             if (iphdr->next_proto_id == IPPROTO_ICMP)
@@ -73,6 +71,8 @@ int pkt_process(void *arg)
                 IcmpProcessor::getInstance().handlePacket(mbufPool, mbufs[i], ring);
             }
         }
+        TcpProcessor::getInstance().tcpOut(mbufPool);
+        UdpProcessor::getInstance().udpOut(mbufPool);
     }
 }
 

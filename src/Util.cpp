@@ -2,6 +2,10 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <memory.h>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
+#include <cstdint>
 
 std::string convert_uint32_to_ip(uint32_t ip)
 {
@@ -14,7 +18,6 @@ std::string convert_uint32_to_ip(uint32_t ip)
     }
     return std::string(buf);
 }
-
 
 std::string sockaddr_in_to_string(const struct sockaddr_in &addr)
 {
@@ -31,4 +34,22 @@ std::string sockaddr_in_to_string(const struct sockaddr_in &addr)
     snprintf(buffer, sizeof(buffer), "%s:%d", buffer, port);
 
     return std::string(buffer);
+}
+
+std::string macAddressToString(const uint8_t *mac, size_t length)
+{
+    if (length != 6)
+    {
+        throw std::invalid_argument("MAC address must be 6 bytes long");
+    }
+    std::ostringstream oss;
+    for (size_t i = 0; i < length; ++i)
+    {
+        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(mac[i]);
+        if (i < length - 1)
+        {
+            oss << ":";
+        }
+    }
+    return oss.str();
 }

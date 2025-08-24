@@ -13,6 +13,7 @@
 
 int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
 {
+    SPDLOG_INFO("TCP Process ...");
     struct rte_ipv4_hdr *iphdr = rte_pktmbuf_mtod_offset(tcpmbuf, struct rte_ipv4_hdr *, sizeof(struct rte_ether_hdr));
     struct rte_tcp_hdr *tcphdr = (struct rte_tcp_hdr *)(iphdr + 1);
 
@@ -30,9 +31,11 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
     struct TcpStream *ts = TcpTable::getInstance().getTcpStream(iphdr->src_addr, iphdr->dst_addr, tcphdr->src_port, tcphdr->dst_port);
     if (ts == nullptr)
     {
-        SPDLOG_ERROR("Create TcpStream failed");
+        SPDLOG_ERROR("Get TcpStream failed");
         return -2;
     }
+    TcpTable::getInstance().debug();
+    SPDLOG_INFO("ts->status = {}", (int)(ts->status));
 
     switch (ts->status)
     {
@@ -95,9 +98,10 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
             struct TcpStream *ts = TcpProcessor::tcpCreateStream(iphdr->src_addr, iphdr->dst_addr, tcphdr->src_port, tcphdr->dst_port);
             if (ts == nullptr)
             {
-                SPDLOG_ERROR("Create TcpFragment failed");
+                SPDLOG_ERROR("Create TcpStream failed");
                 return -1;
             }
+            SPDLOG_INFO("0x11 add");
             TcpTable::getInstance().addTcpStream(ts);
 
             struct TcpFragment *tf = static_cast<struct TcpFragment *>(rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0));
@@ -215,6 +219,7 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
     }
     if (tcphdr->tcp_flags & RTE_TCP_PSH_FLAG)
     {
+        SPDLOG_INFO("TCP PSH flag received for stream {}", stream->fd);
         tcpEnqueueRecvbuffer(stream, tcphdr, tcplen);
 
         uint8_t hdrlen = tcphdr->data_off >> 4;
@@ -231,6 +236,7 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
     }
     if (tcphdr->tcp_flags & RTE_TCP_FIN_FLAG)
     {
+        SPDLOG_INFO("TCP FIN flag received for stream {}", stream->fd);
         stream->status = TCP_STATUS::TCP_STATUS_CLOSE_WAIT;
         tcpEnqueueRecvbuffer(stream, tcphdr, tcphdr->data_off >> 4);
         stream->rcvNxt = stream->rcvNxt + 1;
@@ -261,15 +267,21 @@ int TcpProcessor::tcpEnqueueRecvbuffer(struct TcpStream *stream, struct rte_tcp_
             rte_free(rfragment);
             return -1;
         }
+        SPDLOG_INFO("TCP packet len {}", payloadlen);
         memset(rfragment->data, 0, payloadlen + 1);
         rte_memcpy(rfragment->data, payload, payloadlen);
+        SPDLOG_INFO("TCP packet data (string): {}", std::string((char *)rfragment->data));
         rfragment->length = payloadlen;
     }
     else if (payloadlen == 0)
     {
+        SPDLOG_INFO("TCP packet with no payload!");
         rfragment->length = 0;
         rfragment->data = nullptr;
     }
+    SPDLOG_INFO("stream->fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}",
+                stream->fd, convert_uint32_to_ip(stream->srcIp), convert_uint32_to_ip(stream->dstIp),
+                ntohs(rfragment->srcPort), ntohs(rfragment->dstPort));
     rte_ring_mp_enqueue(stream->rcvbuf, rfragment);
     pthread_mutex_lock(&stream->mutex);
     pthread_cond_signal(&stream->cond);
@@ -349,13 +361,25 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
         uint8_t *dstMac = ArpTable::getInstance().search(stream->srcIp);
         if (dstMac == nullptr)
         {
+            SPDLOG_INFO("MAC not found for IP: {}, Port: {}", convert_uint32_to_ip(stream->srcIp), ntohs(stream->srcPort));
             uint8_t *dstMac = new uint8_t[RTE_ETHER_ADDR_LEN];
-            struct rte_mbuf *arpbuf = ArpProcessor::getInstance().sendArpPacket(mbufPool, RTE_ARP_OP_REQUEST, ConfigManager::getInstance().getSrcMac(), stream->srcIp, dstMac, stream->dstIp);
+            struct rte_mbuf *arpbuf = ArpProcessor::getInstance().sendArpPacket(mbufPool, RTE_ARP_OP_REQUEST, ConfigManager::getInstance().getSrcMac(), stream->dstIp, dstMac, stream->srcIp);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, nullptr);
             rte_ring_mp_enqueue(stream->sndbuf, fragment);
         }
         else
         {
+            SPDLOG_INFO("Start to send tcp packet...");
+            SPDLOG_INFO("nb_send={}", nb_snd);
+            SPDLOG_INFO("TCP packet fd:{} srcIp:{} srcMac:{} dstIp:{} dstMac:{}", stream->fd,
+                        convert_uint32_to_ip(stream->srcIp), macAddressToString(stream->localMac, 6),
+                        convert_uint32_to_ip(stream->dstIp), macAddressToString(dstMac, 6));
+            if (fragment->data == nullptr)    
+            {
+                SPDLOG_ERROR("TCP fragment is null, cannot send packet");
+            }
+            std::string str(reinterpret_cast<char *>(fragment->data), sizeof(fragment->data));
+            SPDLOG_INFO("Data: {}", str);
             struct rte_mbuf *tcpbuf = TcpPkt(mbufPool, stream->dstIp, stream->srcIp, stream->localMac, dstMac, fragment);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&tcpbuf, 1, nullptr);
 
@@ -368,9 +392,11 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
     return 0;
 }
 
-struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t sip, uint32_t dip,
-                                      uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
+struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t sip, uint32_t dip, uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
+    SPDLOG_INFO("Creating TCP packet srcIP:{} srcMac:{} dstIp:{} dstMac:{}",
+                convert_uint32_to_ip(sip), macAddressToString(srcmac, 6),
+                convert_uint32_to_ip(dip), macAddressToString(dstmac, 6));
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +
                                fragment->optlen * sizeof(uint32_t);
@@ -389,10 +415,9 @@ struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t si
     return mbuf;
 }
 
-int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip,
-                                  uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
+int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip, uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
-
+    SPDLOG_INFO("Encoding TCP packet ...");
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +
                                fragment->optlen * sizeof(uint32_t);
@@ -435,6 +460,10 @@ int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip,
     {
         uint8_t *payload = (uint8_t *)(tcp + 1) + fragment->optlen * sizeof(uint32_t);
         rte_memcpy(payload, fragment->data, fragment->length);
+    }
+    else
+    {
+        SPDLOG_INFO("TCP fragment data is null, no payload to copy");
     }
 
     tcp->cksum = 0;

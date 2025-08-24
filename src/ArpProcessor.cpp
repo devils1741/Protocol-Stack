@@ -94,8 +94,7 @@ int ArpProcessor::handlePacket(struct rte_mempool *mbufPool, struct rte_mbuf *mb
     SPDLOG_INFO("LOCAL_IP: {}", convert_uint32_to_ip(LOCAL_IP));
 
     struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbuf, struct rte_ether_hdr *);
-    struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf,
-                                                       struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
+    struct rte_arp_hdr *ahdr = rte_pktmbuf_mtod_offset(mbuf, struct rte_arp_hdr *, sizeof(struct rte_ether_hdr));
 
     SPDLOG_INFO("Received ARP request from packet target IP: {}", convert_uint32_to_ip(ahdr->arp_data.arp_sip));
     if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))

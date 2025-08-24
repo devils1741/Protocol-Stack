@@ -73,6 +73,8 @@ public:
     TcpStream *getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, uint16_t dport);
     int removeStream(TcpStream *ts);
     std::list<TcpStream *> getTcpStreamList() { return _tcpStreamList; }
+    int getCount() const { return _count; }
+    void debug();
 
 private:
     TcpTable() = default;

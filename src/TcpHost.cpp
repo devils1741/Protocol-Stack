@@ -34,7 +34,12 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
         socklen_t len = sizeof(client);
         std::vector<char> buff(BUFFER_SIZE);
         int connfd = naccept(listenfd, (struct sockaddr *)&client, &len);
-        SPDLOG_INFO("FD:{}", connfd);
+        if (connfd < 0)
+        {
+            SPDLOG_ERROR("TCP accept failed: {}", strerror(errno));
+            continue;
+        }
+        SPDLOG_INFO("connfd: {}", connfd);
         while (1)
         {
             int n = nrecv(connfd, buff.data(), BUFFER_SIZE, 0); // block
@@ -49,7 +54,8 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
                 break;
             }
             else
-            { // nonblock
+            {
+
             }
         }
     }
@@ -96,10 +102,13 @@ int TcpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
 
         pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
         rte_memcpy(&ts->mutex, &blank_mutex, sizeof(pthread_mutex_t));
+        SPDLOG_INFO("0x11 add");
         TcpTable::getInstance().addTcpStream(ts);
+        SPDLOG_INFO("TCP Stream created with fd: {}", ts->fd);
     }
     else
     {
+        SPDLOG_ERROR("Unsupported socket type: {}", type);
         return -1;
     }
     return fd;
@@ -136,6 +145,7 @@ int TcpServerManager::nbind(int sockfd, const struct sockaddr *addr, __attribute
 
 ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__((unused)) int flags)
 {
+    SPDLOG_INFO("nrecv sockfd: {}", sockfd);
     ssize_t length = 0;
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
@@ -143,13 +153,13 @@ ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__
         SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
         return -1;
     }
-
     struct TcpFragment *tf = nullptr;
     int nb_rcv = 0;
-
+    TcpTable::getInstance().debug();
     pthread_mutex_lock(&ts->mutex);
     while ((nb_rcv = rte_ring_mc_dequeue(ts->rcvbuf, (void **)&tf)) < 0)
     {
+        SPDLOG_INFO("Waiting for data...");
         pthread_cond_wait(&ts->cond, &ts->mutex);
     }
     pthread_mutex_unlock(&ts->mutex);
@@ -187,22 +197,36 @@ ssize_t TcpServerManager::nrecv(int sockfd, void *buf, size_t len, __attribute__
 
 int TcpServerManager::naccept(int sockfd, struct sockaddr *addr, __attribute__((unused)) socklen_t *addrlen)
 {
-    SPDLOG_INFO("Alloc FD ...");
+    SPDLOG_INFO("naccept sockfd: {}", sockfd);
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
-        return -1;
-
-    pthread_mutex_lock(&ts->mutex);
-    while ((ts = TcpTable::getInstance().getTcpStreamByPort(ts->dstPort)) == nullptr)
     {
-        pthread_cond_wait(&ts->cond, &ts->mutex);
+        SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
+        return -1;
     }
-    pthread_mutex_unlock(&ts->mutex);
-    ts->fd = allocFdFromBitMap();
-    struct sockaddr_in *saddr = (struct sockaddr_in *)addr;
-    saddr->sin_port = ts->srcPort;
-    rte_memcpy(&saddr->sin_addr.s_addr, &ts->srcIp, sizeof(uint32_t));
-    return ts->fd;
+    if (ts->protocol == IPPROTO_TCP)
+    {
+        TcpStream *tmp = nullptr;
+        pthread_mutex_lock(&ts->mutex);
+        SPDLOG_INFO("Waiting for TCP connection on port: {}", ntohs(ts->dstPort));
+        while ((tmp = TcpTable::getInstance().getTcpStreamByPort(ts->dstPort)) == nullptr)
+        {
+            pthread_cond_wait(&ts->cond, &ts->mutex);
+        }
+        pthread_mutex_unlock(&ts->mutex);
+        tmp->fd = allocFdFromBitMap();
+        SPDLOG_DEBUG("alloc fd {}", tmp->fd);
+        struct sockaddr_in *saddr = (struct sockaddr_in *)addr;
+        saddr->sin_port = tmp->srcPort;
+        rte_memcpy(&saddr->sin_addr.s_addr, &tmp->srcIp, sizeof(uint32_t));
+        TcpTable::getInstance().debug();
+        return tmp->fd;
+    }
+    else
+    {
+        SPDLOG_ERROR("Unsupported protocol: {}", ts->protocol);
+        return -1;
+    }
 }
 
 ssize_t TcpServerManager::nsend(int sockfd, const void *buf, size_t len, __attribute__((unused)) int flags)
@@ -299,7 +323,8 @@ TcpStream *TcpTable::getTcpStreamByPort(uint16_t port)
     struct TcpStream *ts = nullptr;
     for (auto &it : _tcpStreamList)
     {
-        if (it->dstPort == port)
+        // 只取出半连接的队列
+        if (it->dstPort == port && it->fd == -1)
         {
             ts = it;
             return ts;
@@ -315,6 +340,9 @@ TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, ui
     {
         if (it->srcIp == sip && it->dstIp == dip && it->srcPort == sport && it->dstPort == dport)
         {
+            SPDLOG_INFO("Found established TCP stream: fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, status: {}",
+                        it->fd, convert_uint32_to_ip(it->srcIp), convert_uint32_to_ip(it->dstIp),
+                        ntohs(it->srcPort), ntohs(it->dstPort), (int)it->status);
             ts = it;
             return ts;
         }
@@ -323,6 +351,9 @@ TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, ui
     {
         if (it->dstPort == dport && it->status == TCP_STATUS::TCP_STATUS_LISTEN)
         {
+            SPDLOG_INFO("Found listening TCP stream: fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, status: {}",
+                        it->fd, convert_uint32_to_ip(it->srcIp), convert_uint32_to_ip(it->dstIp),
+                        ntohs(it->srcPort), ntohs(it->dstPort), (int)it->status);
             ts = it;
             return ts;
         }
@@ -348,4 +379,15 @@ int TcpTable::removeStream(TcpStream *ts)
             return 1;
     }
     return 0;
+}
+
+void TcpTable::debug()
+{
+    SPDLOG_INFO("TCP Stream List Debug:");
+    for (TcpStream *it : _tcpStreamList)
+    {
+        SPDLOG_INFO("TCP Stream fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, status: {}",
+                    it->fd, convert_uint32_to_ip(it->srcIp), convert_uint32_to_ip(it->dstIp),
+                    ntohs(it->srcPort), ntohs(it->dstPort), (int)it->status);
+    }
 }

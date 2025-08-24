@@ -3,6 +3,7 @@
 #include "ConfigManager.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
+#include <rte_errno.h>
 
 #define UDP_APP_RECV_BUFFER_SIZE 128
 
@@ -39,7 +40,8 @@ int UdpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
         if (udpHost->rcvbuf == nullptr)
         {
             rte_free(udpHost);
-            return -1;
+            SPDLOG_ERROR("Failed to create rcvbuf ring. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
+            rte_exit(EXIT_FAILURE, "alloc rte_ring failed");
         }
 
         udpHost->sndbuf = rte_ring_create("send buffer", RING_SIZE, rte_socket_id(), RING_F_SP_ENQ | RING_F_SC_DEQ);
@@ -47,7 +49,8 @@ int UdpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
         {
             rte_ring_free(udpHost->rcvbuf);
             rte_free(udpHost);
-            return -1;
+            SPDLOG_ERROR("Failed to create sndbuf ring. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
+            rte_exit(EXIT_FAILURE, "alloc rte_ring failed");
         }
         pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
         rte_memcpy(&udpHost->cond, &blank_cond, sizeof(pthread_cond_t));
@@ -56,6 +59,8 @@ int UdpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
         rte_memcpy(&udpHost->mutex, &blank_mutex, sizeof(pthread_mutex_t));
 
         _udpHostList.emplace_back(udpHost);
+
+        SPDLOG_INFO("Add UDP host successed");
     }
     else
     {
@@ -70,6 +75,7 @@ int UdpServerManager::nbind(int sockfd, const struct sockaddr *addr, __attribute
     int isExist = searchFdFromBitMap(sockfd);
     if (isExist == 0)
     {
+        SPDLOG_ERROR("fd is not exist!");
         return -1; // 文件描述符不存在
     }
     for (auto &it : _udpHostList)
@@ -194,7 +200,6 @@ ssize_t UdpServerManager::nrecvfrom(int sockfd, void *buf, size_t len, __attribu
 ssize_t UdpServerManager::nsendto(int sockfd, const void *buf, size_t len, __attribute__((unused)) int flags,
                                   const struct sockaddr *dest_addr, __attribute__((unused)) socklen_t addrlen)
 {
-
     struct UdpHost *host = getHostInfoFromFd(sockfd);
     if (host == nullptr)
         return -1;
