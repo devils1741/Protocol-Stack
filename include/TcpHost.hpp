@@ -87,6 +87,7 @@ private:
 private:
     int _count;
     std::list<TcpStream *> _tcpStreamList;
+    mutable std::mutex _mutex;
 };
 
 class TcpServerManager : public BaseNetwork

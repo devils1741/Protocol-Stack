@@ -16,7 +16,9 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
     SPDLOG_INFO("TCP Process ...");
     struct rte_ipv4_hdr *iphdr = rte_pktmbuf_mtod_offset(tcpmbuf, struct rte_ipv4_hdr *, sizeof(struct rte_ether_hdr));
     struct rte_tcp_hdr *tcphdr = (struct rte_tcp_hdr *)(iphdr + 1);
-
+    SPDLOG_INFO("debug");
+    SPDLOG_INFO("seqnumber: {}, acknumber: {}, srcPort: {}, dstPort: {}",
+                ntohl(tcphdr->sent_seq), ntohl(tcphdr->recv_ack), ntohs(tcphdr->src_port), ntohs(tcphdr->dst_port));
     // tcphdr, rte_ipv4_udptcp_cksum
     uint16_t tcpcksum = tcphdr->cksum;
     tcphdr->cksum = 0;
@@ -35,7 +37,9 @@ int TcpProcessor::tcpProcess(struct rte_mbuf *tcpmbuf)
         return -2;
     }
     TcpTable::getInstance().debug();
-    SPDLOG_INFO("ts->status = {}", (int)(ts->status));
+    SPDLOG_INFO("ts->fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {} status: {}",
+                ts->fd, convert_uint32_to_ip(ts->srcIp), convert_uint32_to_ip(ts->dstIp),
+                ntohs(tcphdr->src_port), ntohs(tcphdr->dst_port), (int)ts->status);
 
     switch (ts->status)
     {
@@ -101,7 +105,6 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
                 SPDLOG_ERROR("Create TcpStream failed");
                 return -1;
             }
-            SPDLOG_INFO("0x11 add");
             TcpTable::getInstance().addTcpStream(ts);
 
             struct TcpFragment *tf = static_cast<struct TcpFragment *>(rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0));
@@ -120,6 +123,9 @@ int TcpProcessor::tcpHandleListen(struct TcpStream *listenStream, struct rte_tcp
             tf->seqnum = ts->sndNxt;
             tf->acknum = ntohl(tcphdr->sent_seq) + 1;
             ts->rcvNxt = tf->acknum;
+
+            SPDLOG_INFO("debug");
+            SPDLOG_INFO("tf->acknum: {}, tf->seqnum: {}", tf->acknum, tf->seqnum);
 
             tf->tcp_flags = (RTE_TCP_SYN_FLAG | RTE_TCP_ACK_FLAG);
             tf->windows = TCP_INITIAL_WINDOW;
@@ -169,8 +175,11 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
     }
 
     uint32_t next_seed = time(nullptr);
+    // 函数只执行一次，不是这里
     ts->sndNxt = rand_r(&next_seed) % TCP_MAX_SEQ;
     rte_memcpy(ts->localMac, ConfigManager::getInstance().getSrcMac(), RTE_ETHER_ADDR_LEN);
+    SPDLOG_INFO("debug");
+    SPDLOG_INFO("ts->sndNxt  {}", ts->sndNxt);
 
     pthread_cond_t blank_cond = PTHREAD_COND_INITIALIZER;
     rte_memcpy(&ts->cond, &blank_cond, sizeof(pthread_cond_t));
@@ -219,7 +228,9 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
     }
     if (tcphdr->tcp_flags & RTE_TCP_PSH_FLAG)
     {
-        SPDLOG_INFO("TCP PSH flag received for stream {}", stream->fd);
+        SPDLOG_INFO("TCP PSH flag received for stream {} srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}",
+                    stream->fd, convert_uint32_to_ip(stream->srcIp), convert_uint32_to_ip(stream->dstIp),
+                    ntohs(tcphdr->src_port), ntohs(tcphdr->dst_port));
         tcpEnqueueRecvbuffer(stream, tcphdr, tcplen);
 
         uint8_t hdrlen = tcphdr->data_off >> 4;
@@ -227,7 +238,8 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
 
         stream->rcvNxt = stream->rcvNxt + payloadlen;
         stream->sndNxt = ntohl(tcphdr->recv_ack);
-
+        SPDLOG_INFO("debug");
+        SPDLOG_INFO("stream->rcvNxt: {}, stream->sndNxt: {}", stream->rcvNxt, stream->sndNxt);
         tcpSendAckpkt(stream, tcphdr);
     }
     if (tcphdr->tcp_flags & RTE_TCP_ACK_FLAG)
@@ -241,6 +253,8 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
         tcpEnqueueRecvbuffer(stream, tcphdr, tcphdr->data_off >> 4);
         stream->rcvNxt = stream->rcvNxt + 1;
         stream->sndNxt = ntohl(tcphdr->recv_ack);
+        SPDLOG_INFO("debug");
+        SPDLOG_INFO("stream->sndNxt{}", stream->sndNxt);
         tcpSendAckpkt(stream, tcphdr);
     }
 
@@ -299,15 +313,15 @@ int TcpProcessor::tcpSendAckpkt(struct TcpStream *stream, struct rte_tcp_hdr *tc
 
     ackfrag->dstPort = tcphdr->src_port;
     ackfrag->srcPort = tcphdr->dst_port;
-    SPDLOG_INFO("Sending ACK packet for stream {}: acknum={}, seqnum={}", stream->fd, stream->rcvNxt, ntohs(tcphdr->sent_seq));
     ackfrag->acknum = stream->rcvNxt;
     ackfrag->seqnum = stream->sndNxt;
-
     ackfrag->tcp_flags = RTE_TCP_ACK_FLAG;
     ackfrag->windows = TCP_INITIAL_WINDOW;
     ackfrag->hdrlen_off = 0x50;
     ackfrag->data = nullptr;
     ackfrag->length = 0;
+    SPDLOG_INFO("debug");
+    SPDLOG_INFO("ackfrag->acknum: {},  ackfrag->seqnum: {}", ackfrag->acknum, ackfrag->seqnum);
 
     rte_ring_mp_enqueue(stream->sndbuf, ackfrag);
 
@@ -348,10 +362,11 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
 {
     std::list<TcpStream *> tmplist = TcpTable::getInstance().getTcpStreamList();
     struct inout_ring *ring = Ring::getSingleton().getRing();
+
     for (auto &stream : tmplist)
     {
         if (stream->sndbuf == nullptr)
-            continue; // listener
+            continue;
 
         struct TcpFragment *fragment = nullptr;
         int nb_snd = rte_ring_mc_dequeue(stream->sndbuf, (void **)&fragment);
@@ -371,16 +386,14 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
         {
             SPDLOG_INFO("Start to send tcp packet...");
             SPDLOG_INFO("nb_send={}", nb_snd);
-            SPDLOG_INFO("TCP packet fd:{} srcIp:{} srcMac:{} dstIp:{} dstMac:{}", stream->fd,
-                        convert_uint32_to_ip(stream->srcIp), macAddressToString(stream->localMac, 6),
-                        convert_uint32_to_ip(stream->dstIp), macAddressToString(dstMac, 6));
-            if (fragment->data == nullptr)    
+            TcpTable::getInstance().debug();
+            if (fragment->data != nullptr)
             {
-                SPDLOG_ERROR("TCP fragment is null, cannot send packet");
+                std::string str(reinterpret_cast<char *>(fragment->data), sizeof(fragment->data));
+                SPDLOG_INFO("Data: {}", str);
             }
-            std::string str(reinterpret_cast<char *>(fragment->data), sizeof(fragment->data));
-            SPDLOG_INFO("Data: {}", str);
             struct rte_mbuf *tcpbuf = TcpPkt(mbufPool, stream->dstIp, stream->srcIp, stream->localMac, dstMac, fragment);
+            SPDLOG_INFO("tcpmbuf->pkt_len: {}, tcpmbuf->data_len: {}", tcpbuf->pkt_len, tcpbuf->data_len);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&tcpbuf, 1, nullptr);
 
             if (fragment->data != nullptr)
@@ -394,9 +407,7 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
 
 struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t sip, uint32_t dip, uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
-    SPDLOG_INFO("Creating TCP packet srcIP:{} srcMac:{} dstIp:{} dstMac:{}",
-                convert_uint32_to_ip(sip), macAddressToString(srcmac, 6),
-                convert_uint32_to_ip(dip), macAddressToString(dstmac, 6));
+
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +
                                fragment->optlen * sizeof(uint32_t);
@@ -417,18 +428,17 @@ struct rte_mbuf *TcpProcessor::TcpPkt(struct rte_mempool *mbuf_pool, uint32_t si
 
 int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip, uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment)
 {
-    SPDLOG_INFO("Encoding TCP packet ...");
     const unsigned total_len = fragment->length + sizeof(struct rte_ether_hdr) +
                                sizeof(struct rte_ipv4_hdr) + sizeof(struct rte_tcp_hdr) +
                                fragment->optlen * sizeof(uint32_t);
 
-    // 1 ethhdr
+    // ethhdr
     struct rte_ether_hdr *eth = (struct rte_ether_hdr *)msg;
     rte_memcpy(eth->s_addr.addr_bytes, srcmac, RTE_ETHER_ADDR_LEN);
     rte_memcpy(eth->d_addr.addr_bytes, dstmac, RTE_ETHER_ADDR_LEN);
     eth->ether_type = htons(RTE_ETHER_TYPE_IPV4);
 
-    // 2 iphdr
+    // ip
     struct rte_ipv4_hdr *ip = (struct rte_ipv4_hdr *)(msg + sizeof(struct rte_ether_hdr));
     ip->version_ihl = 0x45;
     ip->type_of_service = 0;
@@ -443,8 +453,7 @@ int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip, uint
     ip->hdr_checksum = 0;
     ip->hdr_checksum = rte_ipv4_cksum(ip);
 
-    // 3 udphdr
-
+    // tcp
     struct rte_tcp_hdr *tcp = (struct rte_tcp_hdr *)(msg + sizeof(struct rte_ether_hdr) + sizeof(struct rte_ipv4_hdr));
     tcp->src_port = fragment->srcPort;
     tcp->dst_port = fragment->dstPort;
@@ -465,6 +474,11 @@ int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip, uint
     {
         SPDLOG_INFO("TCP fragment data is null, no payload to copy");
     }
+    SPDLOG_INFO("Encoding TCP packet ...");
+    SPDLOG_INFO("Creating TCP packet srcIP:{} srcMac:{} srcPort {}, dstIp:{} dstMac:{}, dstPort {}, sent_seq: {}, recv_ack: {}",
+                convert_uint32_to_ip(sip), macAddressToString(srcmac, 6), ntohs(tcp->src_port),
+                convert_uint32_to_ip(dip), macAddressToString(dstmac, 6), ntohs(tcp->dst_port),
+                ntohl(tcp->sent_seq), ntohl(tcp->recv_ack));
 
     tcp->cksum = 0;
     tcp->cksum = rte_ipv4_udptcp_cksum(ip, tcp);

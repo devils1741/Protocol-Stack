@@ -108,6 +108,7 @@ int main(int argc, char **argv)
             unsigned i = 0;
             for (i = 0; i < nb_tx; i++)
             {
+                SPDLOG_INFO("t[{}] pkt_len: {}, data_len: {}", i, tx[i]->pkt_len, tx[i]->data_len);
                 rte_pktmbuf_free(tx[i]);
             }
         }

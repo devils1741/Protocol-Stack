@@ -55,7 +55,6 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
             }
             else
             {
-
             }
         }
     }
@@ -234,21 +233,27 @@ ssize_t TcpServerManager::nsend(int sockfd, const void *buf, size_t len, __attri
     ssize_t length = 0;
     TcpStream *ts = TcpTable::getInstance().getTcpStreamByFd(sockfd);
     if (ts == nullptr)
+    {
+        SPDLOG_ERROR("Couldn't found TCP Stream. sockfd:{}", sockfd);
         return -1;
+    }
 
     struct TcpFragment *fragment = (struct TcpFragment *)rte_malloc("TcpFragment", sizeof(struct TcpFragment), 0);
     if (fragment == nullptr)
     {
+        SPDLOG_ERROR("Failed to allocate memory for TCP fragment");
         return -2;
     }
 
-    memset(fragment, 0, sizeof(struct TcpStream));
+    memset(fragment, 0, sizeof(struct TcpFragment));
 
-    fragment->dstPort = ts->dstPort;
-    fragment->srcPort = ts->srcPort;
+    fragment->dstPort = ts->srcPort;
+    fragment->srcPort = ts->dstPort;
 
     fragment->acknum = ts->rcvNxt;
     fragment->seqnum = ts->sndNxt;
+    SPDLOG_INFO("debug");
+    SPDLOG_INFO("fragment->acknum: {}, fragment->seqnum: {}", fragment->acknum, fragment->seqnum);
 
     fragment->tcp_flags = RTE_TCP_ACK_FLAG | RTE_TCP_PSH_FLAG;
     fragment->windows = TCP_INITIAL_WINDOW;
@@ -257,6 +262,7 @@ ssize_t TcpServerManager::nsend(int sockfd, const void *buf, size_t len, __attri
     fragment->data = (unsigned char *)rte_malloc("unsigned char *", len + 1, 0);
     if (fragment->data == nullptr)
     {
+        SPDLOG_ERROR("Failed to allocate memory for TCP fragment data");
         rte_free(fragment);
         return -1;
     }
@@ -313,6 +319,7 @@ int TcpTable::addTcpStream(TcpStream *ts)
 {
     if (ts == nullptr)
         return -1;
+    std::lock_guard<std::mutex> lock(_mutex);
     _tcpStreamList.emplace_back(ts);
     _count++;
     return 0;
@@ -336,6 +343,7 @@ TcpStream *TcpTable::getTcpStreamByPort(uint16_t port)
 TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, uint16_t dport)
 {
     struct TcpStream *ts = nullptr;
+    std::lock_guard<std::mutex> lock(_mutex); 
     for (auto &it : _tcpStreamList)
     {
         if (it->srcIp == sip && it->dstIp == dip && it->srcPort == sport && it->dstPort == dport)
@@ -363,6 +371,7 @@ TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, ui
 
 TcpStream *TcpTable::getTcpStreamByFd(int fd)
 {
+    std::lock_guard<std::mutex> lock(_mutex); 
     for (TcpStream *it : _tcpStreamList)
     {
         if (it->fd == fd)
@@ -373,6 +382,7 @@ TcpStream *TcpTable::getTcpStreamByFd(int fd)
 
 int TcpTable::removeStream(TcpStream *ts)
 {
+    std::lock_guard<std::mutex> lock(_mutex); 
     for (TcpStream *it : _tcpStreamList)
     {
         if (it == ts)
@@ -383,11 +393,12 @@ int TcpTable::removeStream(TcpStream *ts)
 
 void TcpTable::debug()
 {
-    SPDLOG_INFO("TCP Stream List Debug:");
+    std::lock_guard<std::mutex> lock(_mutex); 
+    SPDLOG_INFO("TCP Stream List length: {}", _tcpStreamList.size());
     for (TcpStream *it : _tcpStreamList)
     {
-        SPDLOG_INFO("TCP Stream fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, status: {}",
+        SPDLOG_INFO("TCP Stream fd: {}, srcIp: {}, dstIp: {}, srcPort: {}, dstPort: {}, status: {}, sndNxt: {}, rcvNxt: {}",
                     it->fd, convert_uint32_to_ip(it->srcIp), convert_uint32_to_ip(it->dstIp),
-                    ntohs(it->srcPort), ntohs(it->dstPort), (int)it->status);
+                    ntohs(it->srcPort), ntohs(it->dstPort), (int)it->status, it->sndNxt, it->rcvNxt);
     }
 }
