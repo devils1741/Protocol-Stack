@@ -49,6 +49,7 @@ target_include_directories(ProtocolStack PRIVATE
 target_link_libraries(ProtocolStack PRIVATE
         ${DPDK_LIBRARIES}
         GTest::gtest GTest::gtest_main
+        rte_kni 
         PRIVATE spdlog::spdlog_header_only
 )
 

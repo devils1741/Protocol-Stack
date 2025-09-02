@@ -3,6 +3,7 @@
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 #include <rte_mbuf.h>
+#include <rte_kni.h>
 #include "Logger.hpp"
 #include "ConfigManager.hpp"
 #include "DpdkManager.hpp"
@@ -11,7 +12,7 @@
 #include "UdpHost.hpp"
 #include "Arp.hpp"
 #include "TcpProcessor.hpp"
-
+struct rte_kni *global_kni = NULL;
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
