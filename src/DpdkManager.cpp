@@ -1,4 +1,6 @@
 #include "DpdkManager.hpp"
+#include "ConfigManager.hpp"
+#include <rte_errno.h>
 
 DPDKManager::DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id) : _name(name), _NUM_MBUFS(NUM_MBUFS), _socket_id(socket_id)
 {
@@ -70,6 +72,65 @@ int DPDKManager::initPort(int portID, rte_eth_conf port_conf_default)
     {
         SPDLOG_ERROR("Could not start port {}", portID);
         rte_exit(EXIT_FAILURE, "Could not start\n");
+    }
+
+    if(ConfigManager::getInstance().isKniEnabled())
+    {
+        rte_eth_promiscuous_enable(portID);
+    }
+    return 0;
+}
+
+
+
+struct rte_kni* DPDKManager::allocKni(int portID)
+{
+    struct rte_kni *kniHandler = nullptr;
+    struct rte_kni_conf kniConf;
+    memset(&kniConf, 0, sizeof(kniConf));
+    SPDLOG_INFO("KNI Port Initialization started for port ID: {}", portID);
+    snprintf(kniConf.name, RTE_KNI_NAMESIZE, "vEth%u", portID);
+    kniConf.group_id = portID;
+    kniConf.mbuf_size = ConfigManager::getInstance().getMaxPacketSize();
+    rte_eth_macaddr_get(portID, (struct rte_ether_addr *)kniConf.mac_addr);
+    rte_eth_dev_get_mtu(portID, &kniConf.mtu);
+
+    struct rte_kni_ops ops;
+    memset(&ops, 0, sizeof(ops));
+    ops.port_id = portID;
+    ops.config_network_if = configNetworkIf;
+
+    kniHandler = rte_kni_alloc(_mbufPool, &kniConf, &ops);
+    if (kniHandler == nullptr)
+    {
+        SPDLOG_ERROR("Failed to create KNI. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
+        rte_exit(EXIT_FAILURE, "Failed to create KNI\n");
+    }
+    return kniHandler;
+}
+
+int DPDKManager::configNetworkIf(uint16_t portId, uint8_t ifUp)
+{
+    if(!rte_eth_dev_is_valid_port(portId))
+    {
+        SPDLOG_ERROR("Invalid port ID: {}", portId);
+        return -1;
+    }
+
+    int ret = 0;
+    if(ifUp)
+    {
+       rte_eth_dev_stop(portId);
+       ret = rte_eth_dev_start(portId);
+    }else
+    {
+        rte_eth_dev_stop(portId);
+    }
+
+    if(ret<0)
+    {
+        SPDLOG_INFO("Failed to {} the port: {}", ifUp ? "start" : "stop", portId);
+        return -1;
     }
     return 0;
 }

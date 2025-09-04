@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include "Logger.hpp"
+#include <rte_kni.h>
 
 using std::string;
 
@@ -43,6 +44,9 @@ public:
      * @return 成功时返回0,失败时直接退出程序
      */
     int initPort(int portID, rte_eth_conf port_conf_default);
+
+    struct rte_kni *allocKni(int portID);
+    static int configNetworkIf(uint16_t portId, uint8_t ifUp);
 
 private:
     DPDKManager(const DPDKManager &) = delete;            ///< 禁止拷贝构造函数

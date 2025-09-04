@@ -38,6 +38,8 @@ public:
         inet_pton(AF_INET, _local_ip.c_str(), &addr); // addr.s_addr 现在是网络字节序
         _local_addr = MAKE_IPV4_ADDR(192, 168, 0, 104);
         _dpdk_port_id = _json["DPDK_PORT_ID"].get<int>();
+        _max_packet_size = _json["MAX_PACKET_SIZE"].get<int>();
+        _enable_kni = _json["ENABLE_KNI"].get<bool>();
         return true;
     }
 
@@ -65,6 +67,8 @@ public:
     int getDpdkPortId() const { return _dpdk_port_id; }
     unsigned long long getTimerResolutionCycles() const { return _timer_resolution_cycles; }
     uint8_t *getSrcMac() { return _src_mac; }
+    uint8_t getMaxPacketSize() const { return _max_packet_size; }
+    bool isKniEnabled() const { return _enable_kni; }
 
 private:
     // 私有构造函数
@@ -85,4 +89,6 @@ private:
     uint32_t _local_addr = 0;
     int _dpdk_port_id = 0;
     uint8_t _src_mac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    uint8_t _max_packet_size = 0;
+    bool _enable_kni = false;
 };

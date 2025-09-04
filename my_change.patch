@@ -1,0 +1,224 @@
+diff --git a/config/args.json b/config/args.json
+index 4a39137..ca7da00 100644
+--- a/config/args.json
++++ b/config/args.json
+@@ -5,5 +5,7 @@
+     "RING_SIZE": 1024,
+     "TIMER_RESOLUTION_CYCLES": 120000000000,
+     "LOCAL_IP": "192.168.0.104",
+-    "DPDK_PORT_ID": 0
++    "DPDK_PORT_ID": 0,
++    "MAX_PACKET_SIZE":2048,
++    "ENABLE_KNI": false
+ }
+\ No newline at end of file
+diff --git a/include/ConfigManager.hpp b/include/ConfigManager.hpp
+index f62832a..0e36056 100644
+--- a/include/ConfigManager.hpp
++++ b/include/ConfigManager.hpp
+@@ -38,6 +38,8 @@ public:
+         inet_pton(AF_INET, _local_ip.c_str(), &addr); // addr.s_addr 现在是网络字节序
+         _local_addr = MAKE_IPV4_ADDR(192, 168, 0, 104);
+         _dpdk_port_id = _json["DPDK_PORT_ID"].get<int>();
++        _max_packet_size = _json["MAX_PACKET_SIZE"].get<int>();
++        _enable_kni = _json["ENABLE_KNI"].get<bool>();
+         return true;
+     }
+ 
+@@ -65,6 +67,8 @@ public:
+     int getDpdkPortId() const { return _dpdk_port_id; }
+     unsigned long long getTimerResolutionCycles() const { return _timer_resolution_cycles; }
+     uint8_t *getSrcMac() { return _src_mac; }
++    uint8_t getMaxPacketSize() const { return _max_packet_size; }
++    bool isKniEnabled() const { return _enable_kni; }
+ 
+ private:
+     // 私有构造函数
+@@ -85,4 +89,6 @@ private:
+     uint32_t _local_addr = 0;
+     int _dpdk_port_id = 0;
+     uint8_t _src_mac[RTE_ETHER_ADDR_LEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
++    uint8_t _max_packet_size = 0;
++    bool _enable_kni = false;
+ };
+diff --git a/include/DpdkManager.hpp b/include/DpdkManager.hpp
+index f7abe25..876a0ff 100644
+--- a/include/DpdkManager.hpp
++++ b/include/DpdkManager.hpp
+@@ -7,6 +7,7 @@
+ #include <memory>
+ #include <string>
+ #include "Logger.hpp"
++#include <rte_kni.h>
+ 
+ using std::string;
+ 
+@@ -44,6 +45,9 @@ public:
+      */
+     int initPort(int portID, rte_eth_conf port_conf_default);
+ 
++    struct rte_kni *allocKni(int portID);
++    static int configNetworkIf(uint16_t portId, uint8_t ifUp);
++
+ private:
+     DPDKManager(const DPDKManager &) = delete;            ///< 禁止拷贝构造函数
+     DPDKManager(DPDKManager &&) = delete;                 ///< 禁止移动构造函数
+diff --git a/src/DpdkManager.cpp b/src/DpdkManager.cpp
+index 789c9b4..89023ad 100644
+--- a/src/DpdkManager.cpp
++++ b/src/DpdkManager.cpp
+@@ -1,4 +1,6 @@
+ #include "DpdkManager.hpp"
++#include "ConfigManager.hpp"
++#include <rte_errno.h>
+ 
+ DPDKManager::DPDKManager(const string &name, unsigned NUM_MBUFS, int socket_id) : _name(name), _NUM_MBUFS(NUM_MBUFS), _socket_id(socket_id)
+ {
+@@ -71,5 +73,64 @@ int DPDKManager::initPort(int portID, rte_eth_conf port_conf_default)
+         SPDLOG_ERROR("Could not start port {}", portID);
+         rte_exit(EXIT_FAILURE, "Could not start\n");
+     }
++
++    if(ConfigManager::getInstance().isKniEnabled())
++    {
++        rte_eth_promiscuous_enable(portID);
++    }
+     return 0;
+ }
++
++
++
++struct rte_kni* DPDKManager::allocKni(int portID)
++{
++    struct rte_kni *kniHandler = nullptr;
++    struct rte_kni_conf kniConf;
++    memset(&kniConf, 0, sizeof(kniConf));
++    SPDLOG_INFO("KNI Port Initialization started for port ID: {}", portID);
++    snprintf(kniConf.name, RTE_KNI_NAMESIZE, "vEth%u", portID);
++    kniConf.group_id = portID;
++    kniConf.mbuf_size = ConfigManager::getInstance().getMaxPacketSize();
++    rte_eth_macaddr_get(portID, (struct rte_ether_addr *)kniConf.mac_addr);
++    rte_eth_dev_get_mtu(portID, &kniConf.mtu);
++
++    struct rte_kni_ops ops;
++    memset(&ops, 0, sizeof(ops));
++    ops.port_id = portID;
++    ops.config_network_if = configNetworkIf;
++
++    kniHandler = rte_kni_alloc(_mbufPool, &kniConf, &ops);
++    if (kniHandler == nullptr)
++    {
++        SPDLOG_ERROR("Failed to create KNI. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
++        rte_exit(EXIT_FAILURE, "Failed to create KNI\n");
++    }
++    return kniHandler;
++}
++
++int DPDKManager::configNetworkIf(uint16_t portId, uint8_t ifUp)
++{
++    if(!rte_eth_dev_is_valid_port(portId))
++    {
++        SPDLOG_ERROR("Invalid port ID: {}", portId);
++        return -1;
++    }
++
++    int ret = 0;
++    if(ifUp)
++    {
++       rte_eth_dev_stop(portId);
++       ret = rte_eth_dev_start(portId);
++    }else
++    {
++        rte_eth_dev_stop(portId);
++    }
++
++    if(ret<0)
++    {
++        SPDLOG_INFO("Failed to {} the port: {}", ifUp ? "start" : "stop", portId);
++        return -1;
++    }
++    return 0;
++}
+\ No newline at end of file
+diff --git a/src/main.cpp b/src/main.cpp
+index 589d65d..7bc4e04 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -12,7 +12,7 @@
+ #include "UdpHost.hpp"
+ #include "Arp.hpp"
+ #include "TcpProcessor.hpp"
+-struct rte_kni *global_kni = NULL;
++
+ static const struct rte_eth_conf port_conf_default = {
+     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
+ 
+@@ -32,6 +32,7 @@ int main(int argc, char **argv)
+     const int DPDK_PORT_ID = configManager.getDpdkPortId();
+     const int RING_SIZE = configManager.getRingSize();
+     const int BURST_SIZE = configManager.getBurstSize();
++    const bool ENABLE_KNI = configManager.isKniEnabled();
+     // const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
+ 
+     // ArpTable::getInstance();
+@@ -44,11 +45,36 @@ int main(int argc, char **argv)
+     }
+ 
+     std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>("mbuf pool", NUM_MBUFS, rte_socket_id());
+-    if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
++    if (ENABLE_KNI)
+     {
+-        SPDLOG_ERROR("Failed to initialize DPDK port");
+-        rte_exit(EXIT_FAILURE, "Error with port init\n");
+-        return -1;
++        if (rte_kni_init(DPDK_PORT_ID) == -1)
++        {
++            SPDLOG_ERROR("Failed to initialize KNI");
++            rte_exit(EXIT_FAILURE, "Error with KNI init\n");
++            return -1;
++        }
++        if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
++        {
++            SPDLOG_ERROR("Failed to initialize DPDK port");
++            rte_exit(EXIT_FAILURE, "Error with port init\n");
++            return -1;
++        }
++        struct rte_kni *kni = dpdkManager->allocKni(DPDK_PORT_ID);
++        if (kni == nullptr)
++        {
++            SPDLOG_ERROR("Failed to create KNI");
++            rte_exit(EXIT_FAILURE, "Error with KNI init\n");
++            return -1;
++        }
++    }
++    else
++    {
++        if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
++        {
++            SPDLOG_ERROR("Failed to initialize DPDK port");
++            rte_exit(EXIT_FAILURE, "Error with port init\n");
++            return -1;
++        }
+     }
+ 
+     if (rte_eth_macaddr_get(DPDK_PORT_ID, (struct rte_ether_addr *)configManager.getSrcMac()) == 0)
+@@ -72,16 +98,16 @@ int main(int argc, char **argv)
+     struct PktProcessParams pktParams = {
+         .mbufPool = dpdkManager->getMbufPool(),
+         .ring = ring};
+-    
++
+     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
+ 
+     // 启动UDP服务
+     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
+-	rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
++    rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
+ 
+     // 启动TCP服务
+     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
+-	rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
++    rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
+ 
+     // 设置接收队列和发送队列
+     while (1)

@@ -12,7 +12,7 @@
 #include "UdpHost.hpp"
 #include "Arp.hpp"
 #include "TcpProcessor.hpp"
-struct rte_kni *global_kni = NULL;
+
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
 
@@ -32,6 +32,7 @@ int main(int argc, char **argv)
     const int DPDK_PORT_ID = configManager.getDpdkPortId();
     const int RING_SIZE = configManager.getRingSize();
     const int BURST_SIZE = configManager.getBurstSize();
+    const bool ENABLE_KNI = configManager.isKniEnabled();
     // const uint32_t LOCAL_ADDR = configManager.getLocalAddr();
 
     // ArpTable::getInstance();
@@ -44,11 +45,36 @@ int main(int argc, char **argv)
     }
 
     std::shared_ptr<DPDKManager> dpdkManager = std::make_shared<DPDKManager>("mbuf pool", NUM_MBUFS, rte_socket_id());
-    if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
+    if (ENABLE_KNI)
     {
-        SPDLOG_ERROR("Failed to initialize DPDK port");
-        rte_exit(EXIT_FAILURE, "Error with port init\n");
-        return -1;
+        if (rte_kni_init(DPDK_PORT_ID) == -1)
+        {
+            SPDLOG_ERROR("Failed to initialize KNI");
+            rte_exit(EXIT_FAILURE, "Error with KNI init\n");
+            return -1;
+        }
+        if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
+        {
+            SPDLOG_ERROR("Failed to initialize DPDK port");
+            rte_exit(EXIT_FAILURE, "Error with port init\n");
+            return -1;
+        }
+        struct rte_kni *kni = dpdkManager->allocKni(DPDK_PORT_ID);
+        if (kni == nullptr)
+        {
+            SPDLOG_ERROR("Failed to create KNI");
+            rte_exit(EXIT_FAILURE, "Error with KNI init\n");
+            return -1;
+        }
+    }
+    else
+    {
+        if (dpdkManager->initPort(DPDK_PORT_ID, port_conf_default) < 0)
+        {
+            SPDLOG_ERROR("Failed to initialize DPDK port");
+            rte_exit(EXIT_FAILURE, "Error with port init\n");
+            return -1;
+        }
     }
 
     if (rte_eth_macaddr_get(DPDK_PORT_ID, (struct rte_ether_addr *)configManager.getSrcMac()) == 0)
@@ -72,16 +98,16 @@ int main(int argc, char **argv)
     struct PktProcessParams pktParams = {
         .mbufPool = dpdkManager->getMbufPool(),
         .ring = ring};
-    
+
     rte_eal_remote_launch(pkt_process, &pktParams, lcore_id);
 
     // 启动UDP服务
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
-	rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
+    rte_eal_remote_launch(udp_server, &pktParams, lcore_id);
 
     // 启动TCP服务
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
-	rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
+    rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
 
     // 设置接收队列和发送队列
     while (1)
