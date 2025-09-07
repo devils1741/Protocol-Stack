@@ -160,3 +160,9 @@ int UdpProcessor::encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp,
 
     return 0;
 }
+
+
+int UdpProcessor::setNextProcessor(std::shared_ptr<Processor> nextProcessor)
+{
+
+}

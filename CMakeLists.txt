@@ -39,6 +39,7 @@ add_executable(ProtocolStack
         src/UdpHost.cpp
         src/TcpHost.cpp
         src/TcpProcessor.cpp
+        src/KniProcessor.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE

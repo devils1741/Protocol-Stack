@@ -7,6 +7,7 @@
 #include "ConfigManager.hpp"
 #include "TcpHost.hpp"
 #include "TcpProcessor.hpp"
+#include "KniProcessor.hpp"
 
 int pkt_process(void *arg)
 {
@@ -25,6 +26,7 @@ int pkt_process(void *arg)
         return -1;
     }
     const int BURST_SIZE = ConfigManager::getInstance().getBurstSize();
+    const bool ENABLE_KNI = ConfigManager::getInstance().isKniEnabled();
 
     while (1)
     {
@@ -35,6 +37,13 @@ int pkt_process(void *arg)
         {
             SPDLOG_INFO("Received packet number: {}, current {}", num_recvd, i);
             struct rte_ether_hdr *ehdr = rte_pktmbuf_mtod(mbufs[i], struct rte_ether_hdr *);
+
+            if (ENABLE_KNI)
+            {
+                SPDLOG_INFO("Received other IP packet, kni prosses it.");
+                KniProcessor::getInstance().burstTx(mbufs, num_recvd);
+                continue;
+            }
 
             if (ehdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_ARP))
             {
@@ -58,19 +67,19 @@ int pkt_process(void *arg)
                 SPDLOG_INFO("Received UDP packet. next_proto_id={}", iphdr->next_proto_id);
                 UdpProcessor::getInstance().udpProcess(mbufs[i]);
             }
-
-            if (iphdr->next_proto_id == IPPROTO_TCP)
+            else if (iphdr->next_proto_id == IPPROTO_TCP)
             {
                 SPDLOG_INFO("Received TCP packet. next_proto_id={}", iphdr->next_proto_id);
                 TcpProcessor::getInstance().tcpProcess(mbufs[i]);
             }
-
-            if (iphdr->next_proto_id == IPPROTO_ICMP)
+            else if (iphdr->next_proto_id == IPPROTO_ICMP)
             {
                 SPDLOG_INFO("Received ICMP packet. next_proto_id={}", iphdr->next_proto_id);
                 IcmpProcessor::getInstance().handlePacket(mbufPool, mbufs[i], ring);
             }
         }
+
+        KniProcessor::getInstance().kniHandleRequests();
         TcpProcessor::getInstance().tcpOut(mbufPool);
         UdpProcessor::getInstance().udpOut(mbufPool);
     }

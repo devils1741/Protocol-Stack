@@ -6,8 +6,7 @@
 #include "UdpHost.hpp"
 #include <mutex>
 
-
-class UdpProcessor
+class UdpProcessor : public Processor
 {
 public:
     static UdpProcessor &getInstance()
@@ -19,6 +18,7 @@ public:
     int udpOut(struct rte_mempool *mbuf_pool);
     struct rte_mbuf *udpPkt(struct rte_mempool *mbuf_pool, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, uint8_t *data, uint16_t length);
     int encodeUdpApppkt(uint8_t *msg, uint32_t srcIp, uint32_t dstIp, uint16_t srcPort, uint16_t dstPort, uint8_t *srcMac, uint8_t *dstMac, unsigned char *data, uint16_t total_len);
+    int setNextProcessor(std::shared_ptr<Processor> nextProcessor);
 
 private:
     UdpProcessor() = default;

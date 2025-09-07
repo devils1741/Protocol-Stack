@@ -485,3 +485,7 @@ int TcpProcessor::encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip, uint
 
     return 0;
 }
+
+int TcpProcessor::setNextProcessor(std::shared_ptr<Processor> nextProcessor)
+{
+}

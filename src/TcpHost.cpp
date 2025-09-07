@@ -101,7 +101,6 @@ int TcpServerManager::nsocket(__attribute__((unused)) int domain, int type, __at
 
         pthread_mutex_t blank_mutex = PTHREAD_MUTEX_INITIALIZER;
         rte_memcpy(&ts->mutex, &blank_mutex, sizeof(pthread_mutex_t));
-        SPDLOG_INFO("0x11 add");
         TcpTable::getInstance().addTcpStream(ts);
         SPDLOG_INFO("TCP Stream created with fd: {}", ts->fd);
     }

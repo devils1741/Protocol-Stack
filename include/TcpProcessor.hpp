@@ -1,8 +1,9 @@
 #ifndef TCP_PROCESSOR_HPP
 #define TCP_PROCESSOR_HPP
 #include "TcpHost.hpp"
+#include "Processor.hpp"
 
-class TcpProcessor
+class TcpProcessor : public Processor
 {
 public:
     static TcpProcessor &getInstance()
@@ -24,6 +25,7 @@ public:
                             uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment);
     int encodeTcpApppkt(uint8_t *msg, uint32_t sip, uint32_t dip,
                         uint8_t *srcmac, uint8_t *dstmac, struct TcpFragment *fragment);
+    int setNextProcessor(std::shared_ptr<Processor> nextProcessor);
 
 private:
     TcpProcessor() = default;

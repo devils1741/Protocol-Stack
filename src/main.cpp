@@ -12,6 +12,7 @@
 #include "UdpHost.hpp"
 #include "Arp.hpp"
 #include "TcpProcessor.hpp"
+#include "KniProcessor.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
@@ -66,6 +67,7 @@ int main(int argc, char **argv)
             rte_exit(EXIT_FAILURE, "Error with KNI init\n");
             return -1;
         }
+        KniProcessor::getInstance().setKni(kni);
     }
     else
     {
