@@ -13,6 +13,7 @@
 #include "Arp.hpp"
 #include "TcpProcessor.hpp"
 #include "KniProcessor.hpp"
+#include "DDosDetect.hpp"
 
 static const struct rte_eth_conf port_conf_default = {
     .rxmode = {.max_rx_pkt_len = RTE_ETHER_MAX_LEN}};
@@ -111,6 +112,8 @@ int main(int argc, char **argv)
     lcore_id = rte_get_next_lcore(lcore_id, 1, 0);
     rte_eal_remote_launch(tcp_server, &pktParams, lcore_id);
 
+    DDosDetect ddosDetect;
+    uint32_t i;
     // 设置接收队列和发送队列
     while (1)
     {
@@ -124,10 +127,15 @@ int main(int argc, char **argv)
         }
         else if (num_recvd > 0)
         {
+            for (i = 0; i < num_recvd; i++)
+            {
+                ddosDetect.ddosDetect(rx[i]);
+            }
             rte_ring_sp_enqueue_burst(ring->in, (void **)rx, num_recvd, nullptr);
             SPDLOG_INFO("Received {} packets from port {}", num_recvd, DPDK_PORT_ID);
         }
         // 发送数据包
+
         struct rte_mbuf *tx[BURST_SIZE];
         unsigned nb_tx = rte_ring_sc_dequeue_burst(ring->out, (void **)tx, BURST_SIZE, nullptr);
         if (nb_tx > 0)

@@ -40,6 +40,7 @@ add_executable(ProtocolStack
         src/TcpHost.cpp
         src/TcpProcessor.cpp
         src/KniProcessor.cpp
+        src/DDosDetect.cpp
 )
 
 target_include_directories(ProtocolStack PRIVATE
