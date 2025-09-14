@@ -6,6 +6,7 @@
 #include <rte_ethdev.h>
 #include <list>
 #include "BaseNetwork.hpp"
+#include "Epoll.hpp"
 
 #define TCP_OPTION_LENGTH 10
 
@@ -71,10 +72,12 @@ public:
     int addTcpStream(TcpStream *ts);
     TcpStream *getTcpStreamByPort(uint16_t port);
     TcpStream *getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, uint16_t dport);
+    struct event_pool *getEpoll() { return _ep; }
     int removeStream(TcpStream *ts);
     std::list<TcpStream *> getTcpStreamList() { return _tcpStreamList; }
     int getCount() const { return _count; }
     void debug();
+    void setEpoll(struct event_pool *ep) { _ep = ep; }
 
 private:
     TcpTable() = default;
@@ -88,6 +91,7 @@ private:
     int _count;
     std::list<TcpStream *> _tcpStreamList;
     mutable std::mutex _mutex;
+    struct event_pool *_ep = nullptr;
 };
 
 class TcpServerManager : public BaseNetwork
