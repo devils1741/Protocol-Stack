@@ -5,8 +5,10 @@
 #include "ConfigManager.hpp"
 #include "Arp.hpp"
 #include "ArpProcessor.hpp"
+#include "Epoll.hpp"
 #include <rte_malloc.h>
 #include <rte_errno.h>
+#include <cstdio>
 
 #define TCP_INITIAL_WINDOW 14600
 #define TCP_MAX_SEQ 4294967295
@@ -158,14 +160,18 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
     SPDLOG_INFO("TcpStream create srcIp={}, dstIp={}, srcPort={}, dstPort={}", convert_uint32_to_ip(srcIp), convert_uint32_to_ip(dstIp), ntohs(srcPort), ntohs(dstPort));
 
     int RING_SIZE = ConfigManager::getInstance().getRingSize();
-    ts->sndbuf = rte_ring_create("sndbuf", RING_SIZE, rte_socket_id(), 0);
+    char sbufname[32] = {0};
+	sprintf(sbufname, "sndbuf%s%d", convert_uint32_to_ip(srcIp), srcPort);
+    ts->sndbuf = rte_ring_create(sbufname, RING_SIZE, rte_socket_id(), 0);
     if (ts->sndbuf == nullptr)
     {
         rte_free(ts);
         SPDLOG_ERROR("Failed to create sndbuf ring. {}. Error code {}", rte_strerror(rte_errno), rte_errno);
         return nullptr;
     }
-    ts->rcvbuf = rte_ring_create("rcvbuf", RING_SIZE, rte_socket_id(), 0);
+    char rbufName[32] = {0};
+	sprintf(rbufName, "sndbuf%s%d", convert_uint32_to_ip(dstIp), dstPort);
+    ts->rcvbuf = rte_ring_create(rbufName, RING_SIZE, rte_socket_id(), 0);
     if (ts->rcvbuf == nullptr)
     {
         rte_ring_free(ts->sndbuf);
@@ -213,6 +219,7 @@ int TcpProcessor::tcpHandleSynRcvd(struct TcpStream *stream, struct rte_tcp_hdr 
             pthread_mutex_lock(&listenStream->mutex);
             pthread_cond_signal(&listenStream->cond);
             pthread_mutex_unlock(&listenStream->mutex);
+            epoll_event_callback(TcpTable::getInstance().getEpoll(), stream->fd, EPOLLIN);
         }
     }
     return 0;
@@ -232,6 +239,8 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
                     stream->fd, convert_uint32_to_ip(stream->srcIp), convert_uint32_to_ip(stream->dstIp),
                     ntohs(tcphdr->src_port), ntohs(tcphdr->dst_port));
         tcpEnqueueRecvbuffer(stream, tcphdr, tcplen);
+
+        epoll_event_callback(TcpTable::getInstance().getEpoll(), stream->fd, EPOLLIN);
 
         uint8_t hdrlen = tcphdr->data_off >> 4;
         int payloadlen = tcplen - hdrlen * 4;
@@ -256,6 +265,7 @@ int TcpProcessor::tcpHandleEstablished(struct TcpStream *stream, struct rte_tcp_
         SPDLOG_INFO("debug");
         SPDLOG_INFO("stream->sndNxt{}", stream->sndNxt);
         tcpSendAckpkt(stream, tcphdr);
+        epoll_event_callback(TcpTable::getInstance().getEpoll(), stream->fd, EPOLLIN);
     }
 
     return 0;

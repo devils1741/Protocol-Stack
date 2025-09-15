@@ -65,7 +65,7 @@ RB_GENERATE_STATIC(_epoll_rb_socket, epitem, rbn, sockfd_cmp);
 
 typedef struct _epoll_rb_socket ep_rb_tree;
 
-struct event_pool
+struct event_poll
 {
     int fd;
     ep_rb_tree rbr;
@@ -80,7 +80,7 @@ struct event_pool
     pthread_mutex_t cdmtx;
 };
 
-int epoll_event_callback();
+int epoll_event_callback(struct event_poll *ep, int sockid, uint32_t event);
 int nepoll_create(int size);
 int nepoll_ctl(int epfd, int op, int sockfd, struct epoll_event *event);
 int nepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout);

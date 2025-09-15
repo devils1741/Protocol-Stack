@@ -2,6 +2,7 @@
 #include "ConfigManager.hpp"
 #include "Logger.hpp"
 #include "Utils.hpp"
+#include "Epoll.hpp"
 #include <rte_malloc.h>
 #include <arpa/inet.h>
 #include <vector>
@@ -27,38 +28,80 @@ int TcpServerManager::tcpServer(__attribute__((unused)) void *arg)
     nbind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr));
     SPDLOG_INFO("TCP server bind to port: {}", ntohs(servaddr.sin_port));
     nlisten(listenfd, 10);
+    int epfd = nepoll_create(1);
+    struct epoll_event ev, events[128];
+    ev.events = EPOLLIN;
+    ev.data.fd = listenfd;
+    nepoll_ctl(epfd, EPOLL_CTL_ADD, listenfd, &ev);
     int BUFFER_SIZE = ConfigManager::getInstance().getBufferSize();
+    char buff[BUFFER_SIZE] = {0};
     while (1)
     {
-        struct sockaddr_in client;
-        socklen_t len = sizeof(client);
-        std::vector<char> buff(BUFFER_SIZE);
-        int connfd = naccept(listenfd, (struct sockaddr *)&client, &len);
-        if (connfd < 0)
-        {
-            SPDLOG_ERROR("TCP accept failed: {}", strerror(errno));
+        int nready = nepoll_wait(epfd, events, 128, 5);
+        if (nready < 0)
             continue;
-        }
-        SPDLOG_INFO("connfd: {}", connfd);
-        while (1)
+
+        for (int i = 0; i < nready; ++i)
         {
-            int n = nrecv(connfd, buff.data(), BUFFER_SIZE, 0); // block
-            if (n > 0)
+            if (listenfd == events[i].data.fd)
             {
-                SPDLOG_INFO("TCP recv data: {}", buff.data());
-                nsend(connfd, buff.data(), n, 0);
-            }
-            else if (n == 0)
-            {
-                nclose(connfd);
-                break;
+                struct sockaddr_in client;
+                socklen_t len = sizeof(client);
+                int connfd = naccept(listenfd, (struct sockaddr *)&client, &len);
+                struct epoll_event ev;
+                ev.events = EPOLLIN;
+                ev.data.fd = connfd;
+                nepoll_ctl(epfd, EPOLL_CTL_ADD, connfd, &ev);
             }
             else
             {
+                int confd = events[i].data.fd;
+                int n = nrecv(confd, buff, BUFFER_SIZE, 0); // block
+                if (n > 0)
+                {
+                    SPDLOG_INFO("TCP recv data: {}", *buff);
+                    nsend(confd, buff, n, 0);
+                }
+                else
+                {
+                    nclose(confd);
+                    struct epoll_event ev;
+                    ev.events = EPOLLIN;
+                    ev.data.fd = confd;
+                    nepoll_ctl(epfd, EPOLL_CTL_DEL, confd, &ev);
+                }
             }
         }
     }
-    nclose(listenfd);
+    //     struct sockaddr_in client;
+    //     socklen_t len = sizeof(client);
+    //     std::vector<char> buff(BUFFER_SIZE);
+    //     int connfd = naccept(listenfd, (struct sockaddr *)&client, &len);
+    //     if (connfd < 0)
+    //     {
+    //         SPDLOG_ERROR("TCP accept failed: {}", strerror(errno));
+    //         continue;
+    //     }
+    //     SPDLOG_INFO("connfd: {}", connfd);
+    //     while (1)
+    //     {
+    //         int n = nrecv(connfd, buff.data(), BUFFER_SIZE, 0); // block
+    //         if (n > 0)
+    //         {
+    //             SPDLOG_INFO("TCP recv data: {}", buff.data());
+    //             nsend(connfd, buff.data(), n, 0);
+    //         }
+    //         else if (n == 0)
+    //         {
+    //             nclose(connfd);
+    //             break;
+    //         }
+    //         else
+    //         {
+    //         }
+    //     }
+    // }
+    // nclose(listenfd);
 }
 
 int TcpServerManager::nsocket(__attribute__((unused)) int domain, int type, __attribute__((unused)) int protocol)
@@ -342,7 +385,7 @@ TcpStream *TcpTable::getTcpStreamByPort(uint16_t port)
 TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, uint16_t dport)
 {
     struct TcpStream *ts = nullptr;
-    std::lock_guard<std::mutex> lock(_mutex); 
+    std::lock_guard<std::mutex> lock(_mutex);
     for (auto &it : _tcpStreamList)
     {
         if (it->srcIp == sip && it->dstIp == dip && it->srcPort == sport && it->dstPort == dport)
@@ -370,7 +413,7 @@ TcpStream *TcpTable::getTcpStream(uint32_t sip, uint32_t dip, uint16_t sport, ui
 
 TcpStream *TcpTable::getTcpStreamByFd(int fd)
 {
-    std::lock_guard<std::mutex> lock(_mutex); 
+    std::lock_guard<std::mutex> lock(_mutex);
     for (TcpStream *it : _tcpStreamList)
     {
         if (it->fd == fd)
@@ -381,7 +424,7 @@ TcpStream *TcpTable::getTcpStreamByFd(int fd)
 
 int TcpTable::removeStream(TcpStream *ts)
 {
-    std::lock_guard<std::mutex> lock(_mutex); 
+    std::lock_guard<std::mutex> lock(_mutex);
     for (TcpStream *it : _tcpStreamList)
     {
         if (it == ts)
@@ -392,7 +435,7 @@ int TcpTable::removeStream(TcpStream *ts)
 
 void TcpTable::debug()
 {
-    std::lock_guard<std::mutex> lock(_mutex); 
+    std::lock_guard<std::mutex> lock(_mutex);
     SPDLOG_INFO("TCP Stream List length: {}", _tcpStreamList.size());
     for (TcpStream *it : _tcpStreamList)
     {

@@ -3,7 +3,7 @@
 #include "Logger.hpp"
 #include "TcpHost.hpp"
 
-int epoll_event_callback(struct event_pool *ep, int sockid, uint32_t event)
+int epoll_event_callback(struct event_poll *ep, int sockid, uint32_t event)
 {
     struct epitem tmp;
     tmp.sockfd = sockid;
@@ -36,7 +36,7 @@ int nepoll_create(int size)
     if (size <= 0)
         return -1;
     int fd = EpollNetwork::getinstance().allocFdFromBitMap();
-    struct event_pool *ep = (struct event_pool *)rte_malloc("event_pool", sizeof(struct event_pool), 0);
+    struct event_poll *ep = (struct event_poll *)rte_malloc("event_poll", sizeof(struct event_poll), 0);
     if (ep == nullptr)
     {
         SPDLOG_ERROR("Epoll create event pool failed!");
@@ -86,7 +86,7 @@ int nepoll_create(int size)
 }
 int nepoll_ctl(int epfd, int op, int sockid, struct epoll_event *event)
 {
-    struct event_pool *ep = TcpTable::getInstance().getEpoll();
+    struct event_poll *ep = TcpTable::getInstance().getEpoll();
     if (!ep || (!event && op != EPOLL_CTL_DEL))
     {
         SPDLOG_ERROR("Epoll ctl error, epoll not found or event is null!");
@@ -165,7 +165,7 @@ int nepoll_ctl(int epfd, int op, int sockid, struct epoll_event *event)
 }
 int nepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
-    struct event_pool *ep = TcpTable::getInstance().getEpoll();
+    struct event_poll *ep = TcpTable::getInstance().getEpoll();
     if (!ep || !events || maxevents <= 0)
     {
         SPDLOG_ERROR("Epoll wait error, epoll not found or events is null or maxevents <= 0!");
@@ -227,7 +227,7 @@ int nepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout
         struct epitem *epi = LIST_FIRST(&ep->rdlist);
         LIST_REMOVE(epi, rdlink);
         epi->rdy = 0;
-        memccpy(&events[i++], &epi->event, sizeof(struct epoll_event));
+        memcpy(&events[i++], &epi->event, sizeof(struct epoll_event));
         --num;
         ++cnt;
         --ep->rdnum;
