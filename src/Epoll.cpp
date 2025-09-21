@@ -3,6 +3,15 @@
 #include "Logger.hpp"
 #include "TcpHost.hpp"
 
+int sockfd_cmp(struct epitem *ep1, struct epitem *ep2)
+{
+    if (ep1->sockfd < ep2->sockfd)
+        return -1;
+    else if (ep1->sockfd == ep2->sockfd)
+        return 0;
+    return 1;
+}
+
 int epoll_event_callback(struct event_poll *ep, int sockid, uint32_t event)
 {
     struct epitem tmp;
@@ -10,7 +19,7 @@ int epoll_event_callback(struct event_poll *ep, int sockid, uint32_t event)
     struct epitem *epi = RB_FIND(_epoll_rb_socket, &ep->rbr, &tmp);
     if (epi == nullptr)
     {
-        SPDLOG_ERROR("Epoll callback error, socket %d not found!", sockid);
+        SPDLOG_ERROR("Epoll callback error, socket {} not found!", sockid);
         return -1;
     }
     if (epi->rdy)
@@ -18,7 +27,7 @@ int epoll_event_callback(struct event_poll *ep, int sockid, uint32_t event)
         epi->event.events |= event;
         return 1;
     }
-    SPDLOG_INFO("Epoll socket %d event %u", sockid, event);
+    SPDLOG_INFO("Epoll socket {} event {}", sockid, event);
     pthread_spin_lock(&ep->slock);
     epi->rdy = 1;
     LIST_INSERT_HEAD(&ep->rdlist, epi, rdlink);
@@ -51,14 +60,14 @@ int nepoll_create(int size)
     if (pthread_mutex_init(&ep->mtx, nullptr) != 0)
     {
         SPDLOG_ERROR("Epoll create event pool mutex init failed!");
-        free(ep);
+        rte_free(ep);
         EpollNetwork::getinstance().freeFdFromBitMap(fd);
         return -2;
     }
     if (pthread_mutex_init(&ep->cdmtx, NULL))
     {
         pthread_mutex_destroy(&ep->mtx);
-        free(ep);
+        rte_free(ep);
         EpollNetwork::getinstance().freeFdFromBitMap(fd);
         return -2;
     }
@@ -67,7 +76,7 @@ int nepoll_create(int size)
     {
         pthread_mutex_destroy(&ep->cdmtx);
         pthread_mutex_destroy(&ep->mtx);
-        free(ep);
+        rte_free(ep);
         EpollNetwork::getinstance().freeFdFromBitMap(fd);
         return -2;
     }
@@ -77,7 +86,7 @@ int nepoll_create(int size)
         pthread_cond_destroy(&ep->cond);
         pthread_mutex_destroy(&ep->cdmtx);
         pthread_mutex_destroy(&ep->mtx);
-        free(ep);
+        rte_free(ep);
         EpollNetwork::getinstance().freeFdFromBitMap(fd);
         return -2;
     }
@@ -112,21 +121,20 @@ int nepoll_ctl(int epfd, int op, int sockid, struct epoll_event *event)
             return -1;
         }
         epi->sockfd = sockid;
+        SPDLOG_INFO("Epoll ctl add socket {} event {}", sockid, event->events);
         memcpy(&epi->event, event, sizeof(struct epoll_event));
+        epi = RB_INSERT(_epoll_rb_socket, &ep->rbr, epi);
         ep->rbcnt++;
         pthread_mutex_unlock(&ep->mtx);
     }
     else if (op == EPOLL_CTL_DEL)
     {
-
         pthread_mutex_lock(&ep->mtx);
-
         struct epitem tmp;
         tmp.sockfd = sockid;
         struct epitem *epi = RB_FIND(_epoll_rb_socket, &ep->rbr, &tmp);
         if (!epi)
         {
-
             pthread_mutex_unlock(&ep->mtx);
             return -1;
         }
@@ -134,21 +142,20 @@ int nepoll_ctl(int epfd, int op, int sockid, struct epoll_event *event)
         epi = RB_REMOVE(_epoll_rb_socket, &ep->rbr, epi);
         if (!epi)
         {
-
             pthread_mutex_unlock(&ep->mtx);
             return -1;
         }
 
         ep->rbcnt--;
-        free(epi);
+        rte_free(epi);
 
         pthread_mutex_unlock(&ep->mtx);
     }
     else if (op == EPOLL_CTL_MOD)
     {
-
         struct epitem tmp;
         tmp.sockfd = sockid;
+        pthread_mutex_lock(&ep->mtx);
         struct epitem *epi = RB_FIND(_epoll_rb_socket, &ep->rbr, &tmp);
         if (epi)
         {
@@ -158,14 +165,16 @@ int nepoll_ctl(int epfd, int op, int sockid, struct epoll_event *event)
         else
         {
             rte_errno = -ENOENT;
+            pthread_mutex_unlock(&ep->mtx);
             return -1;
         }
+        pthread_mutex_unlock(&ep->mtx);
     }
     return 0;
 }
 int nepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout)
 {
-    struct event_poll *ep = TcpTable::getInstance().getEpoll();
+    struct event_poll *ep = TcpTable::getInstance().getEpollByfd(epfd);
     if (!ep || !events || maxevents <= 0)
     {
         SPDLOG_ERROR("Epoll wait error, epoll not found or events is null or maxevents <= 0!");
@@ -232,6 +241,6 @@ int nepoll_wait(int epfd, struct epoll_event *events, int maxevents, int timeout
         ++cnt;
         --ep->rdnum;
     }
-    pthread_spin_lock(&ep->slock);
+    pthread_spin_unlock(&ep->slock);
     return cnt;
 }

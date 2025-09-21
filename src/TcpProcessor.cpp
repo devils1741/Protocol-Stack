@@ -170,7 +170,7 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
         return nullptr;
     }
     char rbufName[32] = {0};
-	sprintf(rbufName, "sndbuf%s%d", convert_uint32_to_ip(dstIp), dstPort);
+	sprintf(rbufName, "rcvbuf%s%d", convert_uint32_to_ip(dstIp), dstPort);
     ts->rcvbuf = rte_ring_create(rbufName, RING_SIZE, rte_socket_id(), 0);
     if (ts->rcvbuf == nullptr)
     {
@@ -181,7 +181,6 @@ struct TcpStream *TcpProcessor::tcpCreateStream(uint32_t srcIp, uint32_t dstIp, 
     }
 
     uint32_t next_seed = time(nullptr);
-    // 函数只执行一次，不是这里
     ts->sndNxt = rand_r(&next_seed) % TCP_MAX_SEQ;
     rte_memcpy(ts->localMac, ConfigManager::getInstance().getSrcMac(), RTE_ETHER_ADDR_LEN);
     SPDLOG_INFO("debug");
@@ -211,6 +210,7 @@ int TcpProcessor::tcpHandleSynRcvd(struct TcpStream *stream, struct rte_tcp_hdr 
             stream->status = TCP_STATUS::TCP_STATUS_ESTABLISHED;
             // accept
             struct TcpStream *listenStream = TcpTable::getInstance().getTcpStream(0, 0, 0, stream->dstPort);
+            TcpTable::getInstance().debug();
             if (listenStream == nullptr)
             {
                 SPDLOG_ERROR("Listen stream not found for port {}", stream->dstPort);
@@ -219,7 +219,7 @@ int TcpProcessor::tcpHandleSynRcvd(struct TcpStream *stream, struct rte_tcp_hdr 
             pthread_mutex_lock(&listenStream->mutex);
             pthread_cond_signal(&listenStream->cond);
             pthread_mutex_unlock(&listenStream->mutex);
-            epoll_event_callback(TcpTable::getInstance().getEpoll(), stream->fd, EPOLLIN);
+            epoll_event_callback(TcpTable::getInstance().getEpoll(), listenStream->fd, EPOLLIN);
         }
     }
     return 0;
@@ -391,6 +391,7 @@ int TcpProcessor::tcpOut(struct rte_mempool *mbufPool)
             struct rte_mbuf *arpbuf = ArpProcessor::getInstance().sendArpPacket(mbufPool, RTE_ARP_OP_REQUEST, ConfigManager::getInstance().getSrcMac(), stream->dstIp, dstMac, stream->srcIp);
             rte_ring_mp_enqueue_burst(ring->out, (void **)&arpbuf, 1, nullptr);
             rte_ring_mp_enqueue(stream->sndbuf, fragment);
+            delete [] dstMac;
         }
         else
         {

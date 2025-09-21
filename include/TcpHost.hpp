@@ -76,6 +76,7 @@ public:
     int removeStream(TcpStream *ts);
     std::list<TcpStream *> getTcpStreamList() { return _tcpStreamList; }
     int getCount() const { return _count; }
+    struct event_poll * getEpollByfd(int epfd);
     void debug();
     void setEpoll(struct event_poll *ep) { _ep = ep; }
 

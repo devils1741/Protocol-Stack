@@ -255,8 +255,12 @@ int TcpServerManager::naccept(int sockfd, struct sockaddr *addr, __attribute__((
             pthread_cond_wait(&ts->cond, &ts->mutex);
         }
         pthread_mutex_unlock(&ts->mutex);
+        if (tmp->fd != -1) {
+            SPDLOG_ERROR("accept: stream already has fd {}", tmp->fd);
+            return -1;
+        }
         tmp->fd = allocFdFromBitMap();
-        SPDLOG_DEBUG("alloc fd {}", tmp->fd);
+        SPDLOG_INFO("alloc fd {}", tmp->fd);
         struct sockaddr_in *saddr = (struct sockaddr_in *)addr;
         saddr->sin_port = tmp->srcPort;
         rte_memcpy(&saddr->sin_addr.s_addr, &tmp->srcIp, sizeof(uint32_t));
@@ -431,6 +435,13 @@ int TcpTable::removeStream(TcpStream *ts)
             return 1;
     }
     return 0;
+}
+
+struct event_poll *TcpTable::getEpollByfd(int epfd)
+{
+    if (epfd == _ep->fd)
+        return _ep;
+    return nullptr;
 }
 
 void TcpTable::debug()
