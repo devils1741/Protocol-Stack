@@ -1,0 +1,106 @@
+\hypertarget{classArpTable}{}\doxysection{Arp\+Table Class Reference}
+\label{classArpTable}\index{ArpTable@{ArpTable}}
+
+
+存储arp地址的类,单例模式，有插入、查找、移除的功能  
+
+
+
+
+{\ttfamily \#include $<$Arp.\+hpp$>$}
+
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \mbox{\hyperlink{classArpTable}{Arp\+Table}} \& \mbox{\hyperlink{classArpTable_a534ecec0732679f23b08fa133ace19a7}{get\+Instance}} ()
+\begin{DoxyCompactList}\small\item\em 获取唯一对象 \end{DoxyCompactList}\item 
+static int \mbox{\hyperlink{classArpTable_a0a5ea41791a854a3b47dbe821a285698}{push\+Back}} (\mbox{\hyperlink{structArpHeader}{Arp\+Header}} arp\+Header)
+\begin{DoxyCompactList}\small\item\em 插入arp数据到队列尾部 \end{DoxyCompactList}\item 
+static int \mbox{\hyperlink{classArpTable_aa953d261f3f791a1cd52a6acd0a6f2df}{remove}} (const \mbox{\hyperlink{structArpHeader}{Arp\+Header}} \&arp\+Header)
+\begin{DoxyCompactList}\small\item\em 移除某个arp数据 \end{DoxyCompactList}\item 
+static uint8\+\_\+t $\ast$ \mbox{\hyperlink{classArpTable_aedb508d868ad375ab3d218a5bdeb07c8}{search}} (const uint32\+\_\+t \&dip)
+\begin{DoxyCompactList}\small\item\em 查找某个\+IP对应的\+MAC地址 \end{DoxyCompactList}\item 
+static int \mbox{\hyperlink{classArpTable_a79e20b68dbff6bd457c04c3071a653ce}{clear}} ()
+\begin{DoxyCompactList}\small\item\em 清空队列中的所有数据 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+存储arp地址的类,单例模式，有插入、查找、移除的功能 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classArpTable_a79e20b68dbff6bd457c04c3071a653ce}\label{classArpTable_a79e20b68dbff6bd457c04c3071a653ce}} 
+\index{ArpTable@{ArpTable}!clear@{clear}}
+\index{clear@{clear}!ArpTable@{ArpTable}}
+\doxysubsubsection{\texorpdfstring{clear()}{clear()}}
+{\footnotesize\ttfamily int Arp\+Table\+::clear (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+清空队列中的所有数据 
+
+\begin{DoxyReturn}{Returns}
+成功时返回0, 如果列表本来就是空则返回-\/1 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classArpTable_a534ecec0732679f23b08fa133ace19a7}\label{classArpTable_a534ecec0732679f23b08fa133ace19a7}} 
+\index{ArpTable@{ArpTable}!getInstance@{getInstance}}
+\index{getInstance@{getInstance}!ArpTable@{ArpTable}}
+\doxysubsubsection{\texorpdfstring{getInstance()}{getInstance()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classArpTable}{Arp\+Table}} \& Arp\+Table\+::get\+Instance (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+获取唯一对象 
+
+\begin{DoxyReturn}{Returns}
+静态类本身 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classArpTable_a0a5ea41791a854a3b47dbe821a285698}\label{classArpTable_a0a5ea41791a854a3b47dbe821a285698}} 
+\index{ArpTable@{ArpTable}!pushBack@{pushBack}}
+\index{pushBack@{pushBack}!ArpTable@{ArpTable}}
+\doxysubsubsection{\texorpdfstring{pushBack()}{pushBack()}}
+{\footnotesize\ttfamily int Arp\+Table\+::push\+Back (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{structArpHeader}{Arp\+Header}}}]{arp\+Header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+插入arp数据到队列尾部 
+
+\begin{DoxyReturn}{Returns}
+成功时返回0 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classArpTable_aa953d261f3f791a1cd52a6acd0a6f2df}\label{classArpTable_aa953d261f3f791a1cd52a6acd0a6f2df}} 
+\index{ArpTable@{ArpTable}!remove@{remove}}
+\index{remove@{remove}!ArpTable@{ArpTable}}
+\doxysubsubsection{\texorpdfstring{remove()}{remove()}}
+{\footnotesize\ttfamily int Arp\+Table\+::remove (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structArpHeader}{Arp\+Header}} \&}]{arp\+Header }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+移除某个arp数据 
+
+\begin{DoxyReturn}{Returns}
+成功时返回0,存储队列为空或者找不到要移除的数据则返回-\/1 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classArpTable_aedb508d868ad375ab3d218a5bdeb07c8}\label{classArpTable_aedb508d868ad375ab3d218a5bdeb07c8}} 
+\index{ArpTable@{ArpTable}!search@{search}}
+\index{search@{search}!ArpTable@{ArpTable}}
+\doxysubsubsection{\texorpdfstring{search()}{search()}}
+{\footnotesize\ttfamily uint8\+\_\+t $\ast$ Arp\+Table\+::search (\begin{DoxyParamCaption}\item[{const uint32\+\_\+t \&}]{dip }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [static]}}
+
+
+
+查找某个\+IP对应的\+MAC地址 
+
+
+\begin{DoxyParams}{Parameters}
+{\em dip} & 需要查找的\+IP地址 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+如果找到则返回对应的\+MAC地址,否则返回nullptr 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Arp.\+hpp\item 
+src/Arp.\+cpp\end{DoxyCompactItemize}

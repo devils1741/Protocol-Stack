@@ -1,0 +1,52 @@
+\hypertarget{classIcmpProcessor}{}\doxysection{Icmp\+Processor Class Reference}
+\label{classIcmpProcessor}\index{IcmpProcessor@{IcmpProcessor}}
+
+
+Inheritance diagram for Icmp\+Processor\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=168pt]{classIcmpProcessor__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Icmp\+Processor\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=168pt]{classIcmpProcessor__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_a5012ee223f971ccfb5ee60c1ae447d9d}\label{classIcmpProcessor_a5012ee223f971ccfb5ee60c1ae447d9d}} 
+int {\bfseries handle\+Packet} (struct rte\+\_\+mempool $\ast$mbuf\+Pool, struct rte\+\_\+mbuf $\ast$mbuf, struct \mbox{\hyperlink{structinout__ring}{inout\+\_\+ring}} $\ast$ring)
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_ac0d71d1d0c738b47f20a7017a2b5f32b}\label{classIcmpProcessor_ac0d71d1d0c738b47f20a7017a2b5f32b}} 
+struct rte\+\_\+mbuf $\ast$ {\bfseries send\+Icmp\+Packet} (struct rte\+\_\+mempool $\ast$mbuf\+Pool, uint8\+\_\+t $\ast$dst\+Mac, uint32\+\_\+t sip, uint32\+\_\+t dip, uint16\+\_\+t id, uint16\+\_\+t seq\+Nb, uint8\+\_\+t $\ast$payload, uint16\+\_\+t payload\+\_\+len)
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_aa054576e58fc3f96131b1cbc2a3daa28}\label{classIcmpProcessor_aa054576e58fc3f96131b1cbc2a3daa28}} 
+int {\bfseries encode\+Icmp\+Pkt} (uint8\+\_\+t $\ast$msg, uint8\+\_\+t $\ast$dst\+Mac, uint32\+\_\+t src\+Ip, uint32\+\_\+t dst\+Ip, uint16\+\_\+t id, uint16\+\_\+t seq\+Nb, uint8\+\_\+t $\ast$payload, uint16\+\_\+t payload\+\_\+len)
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_adf9b00f32824d91338028d561edd8249}\label{classIcmpProcessor_adf9b00f32824d91338028d561edd8249}} 
+int {\bfseries set\+Next\+Processor} (std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classProcessor}{Processor}} $>$ next\+Processor)
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_aa13bda402726c6067e29f61b1a05615d}\label{classIcmpProcessor_aa13bda402726c6067e29f61b1a05615d}} 
+uint16\+\_\+t {\bfseries ng\+\_\+checksum} (uint16\+\_\+t $\ast$addr, int count)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classIcmpProcessor_af32b39d51f38d73b3e992f6bf7a0ee35}\label{classIcmpProcessor_af32b39d51f38d73b3e992f6bf7a0ee35}} 
+static \mbox{\hyperlink{classIcmpProcessor}{Icmp\+Processor}} \& {\bfseries get\+Instance} ()
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Icmp\+Processor.\+hpp\item 
+src/Icmp\+Processor.\+cpp\end{DoxyCompactItemize}

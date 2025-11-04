@@ -1,0 +1,53 @@
+\hypertarget{structArpHeader}{}\doxysection{Arp\+Header Struct Reference}
+\label{structArpHeader}\index{ArpHeader@{ArpHeader}}
+
+
+arp的数据结构,根据协议\+RFC826定义,协议文档地址\+:https\+://www.rfc-\/editor.\+org/rfc/pdfrfc/rfc826.txt.\+pdf  
+
+
+
+
+{\ttfamily \#include $<$Arp.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \mbox{\hyperlink{structArpHeader_a93a8ff3e695a6e0aeacea9ab1156ab1d}{operator==}} (const \mbox{\hyperlink{structArpHeader}{Arp\+Header}} \&other) const
+\begin{DoxyCompactList}\small\item\em 比较两个\+Arp\+Header是否相等，通过属性进行比较，全部相等才认为等价的 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structArpHeader_abefabf8b3bc42cbb059504a1b7976efa}\label{structArpHeader_abefabf8b3bc42cbb059504a1b7976efa}} 
+uint16\+\_\+t \mbox{\hyperlink{structArpHeader_abefabf8b3bc42cbb059504a1b7976efa}{hardware\+\_\+type}} = 0x\+FFFF
+\begin{DoxyCompactList}\small\item\em 硬件类型 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structArpHeader_a6f8b0aafcc3ee46290df49639320a565}\label{structArpHeader_a6f8b0aafcc3ee46290df49639320a565}} 
+uint8\+\_\+t \mbox{\hyperlink{structArpHeader_a6f8b0aafcc3ee46290df49639320a565}{sender\+\_\+hwaddr}} \mbox{[}RTE\+\_\+\+ETHER\+\_\+\+ADDR\+\_\+\+LEN\mbox{]} = \{0x\+FF\}
+\begin{DoxyCompactList}\small\item\em 发送方硬件地址 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structArpHeader_a2961ff8294eefe20bc5ee2fdbade4390}\label{structArpHeader_a2961ff8294eefe20bc5ee2fdbade4390}} 
+uint32\+\_\+t \mbox{\hyperlink{structArpHeader_a2961ff8294eefe20bc5ee2fdbade4390}{sender\+\_\+protoaddr}} = 0x\+FFFFFFFF
+\begin{DoxyCompactList}\small\item\em 发送方协议地址 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+arp的数据结构,根据协议\+RFC826定义,协议文档地址\+:https\+://www.rfc-\/editor.\+org/rfc/pdfrfc/rfc826.txt.\+pdf 
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{structArpHeader_a93a8ff3e695a6e0aeacea9ab1156ab1d}\label{structArpHeader_a93a8ff3e695a6e0aeacea9ab1156ab1d}} 
+\index{ArpHeader@{ArpHeader}!operator==@{operator==}}
+\index{operator==@{operator==}!ArpHeader@{ArpHeader}}
+\doxysubsubsection{\texorpdfstring{operator==()}{operator==()}}
+{\footnotesize\ttfamily bool Arp\+Header\+::operator== (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{structArpHeader}{Arp\+Header}} \&}]{other }\end{DoxyParamCaption}) const}
+
+
+
+比较两个\+Arp\+Header是否相等，通过属性进行比较，全部相等才认为等价的 
+
+\begin{DoxyReturn}{Returns}
+相等返回true,否则返回false 
+\end{DoxyReturn}
+
+
+The documentation for this struct was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Arp.\+hpp\item 
+src/Arp.\+cpp\end{DoxyCompactItemize}

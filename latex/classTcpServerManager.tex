@@ -1,0 +1,62 @@
+\hypertarget{classTcpServerManager}{}\doxysection{Tcp\+Server\+Manager Class Reference}
+\label{classTcpServerManager}\index{TcpServerManager@{TcpServerManager}}
+
+
+Inheritance diagram for Tcp\+Server\+Manager\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=187pt]{classTcpServerManager__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Tcp\+Server\+Manager\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=187pt]{classTcpServerManager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTcpServerManager_a1a396de1bdb5bfa348f7e67354993e50}\label{classTcpServerManager_a1a396de1bdb5bfa348f7e67354993e50}} 
+int {\bfseries nsocket} (int domain, int type, int protocol)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_a8403d3c9c262f6b5779a72e6dd242256}\label{classTcpServerManager_a8403d3c9c262f6b5779a72e6dd242256}} 
+int {\bfseries nlisten} (int sockfd, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int backlog)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_ac40ee5f9a89afade20850366bb5f1aee}\label{classTcpServerManager_ac40ee5f9a89afade20850366bb5f1aee}} 
+int {\bfseries nbind} (int sockfd, const struct sockaddr $\ast$addr, socklen\+\_\+t addrlen)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_a33c8921c426dbd2ed20224c44d8f7c31}\label{classTcpServerManager_a33c8921c426dbd2ed20224c44d8f7c31}} 
+int {\bfseries naccept} (int sockfd, struct sockaddr $\ast$addr, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) socklen\+\_\+t $\ast$addrlen)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_ad1c0724ce67021e179f573fe5133486e}\label{classTcpServerManager_ad1c0724ce67021e179f573fe5133486e}} 
+ssize\+\_\+t {\bfseries nrecv} (int sockfd, void $\ast$buf, size\+\_\+t len, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int flags)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_a81b9f4d42070f65ab6dfe43dae726fa8}\label{classTcpServerManager_a81b9f4d42070f65ab6dfe43dae726fa8}} 
+ssize\+\_\+t {\bfseries nsend} (int sockfd, const void $\ast$buf, size\+\_\+t len, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int flags)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_ab774f229d0d97a7e70ddb2f881a25adb}\label{classTcpServerManager_ab774f229d0d97a7e70ddb2f881a25adb}} 
+int {\bfseries nclose} (int fd)
+\item 
+\mbox{\Hypertarget{classTcpServerManager_a032d829c32ca85494e212055fee7b41d}\label{classTcpServerManager_a032d829c32ca85494e212055fee7b41d}} 
+int {\bfseries tcp\+Server} (\+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) void $\ast$arg)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTcpServerManager_ae99be878e3b34f3b2f73f70328e9f534}\label{classTcpServerManager_ae99be878e3b34f3b2f73f70328e9f534}} 
+static \mbox{\hyperlink{classTcpServerManager}{Tcp\+Server\+Manager}} \& {\bfseries get\+Instance} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Tcp\+Host.\+hpp\item 
+src/Tcp\+Host.\+cpp\end{DoxyCompactItemize}

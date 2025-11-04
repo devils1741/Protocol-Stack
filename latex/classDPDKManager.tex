@@ -1,0 +1,95 @@
+\hypertarget{classDPDKManager}{}\doxysection{DPDKManager Class Reference}
+\label{classDPDKManager}\index{DPDKManager@{DPDKManager}}
+
+
+DPDKManager类用于管理\+DPDK相关资源,主要是一个\+DPDK内存池,还有一些参数例如内存池名称，内存池内部的mbuf数量和socket ID等  
+
+
+
+
+{\ttfamily \#include $<$Dpdk\+Manager.\+hpp$>$}
+
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classDPDKManager_aead1cd0c51880a5d67e291c075699885}{DPDKManager}} (const string \&name, unsigned NUM\+\_\+\+MBUFS, int socket\+\_\+id)
+\begin{DoxyCompactList}\small\item\em 默认构造函数, 创建一个\+DPDKManager对象,同时初始化一个mbuf池 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classDPDKManager_a981c88b99a2c8d51376d9022f6fc03e4}\label{classDPDKManager_a981c88b99a2c8d51376d9022f6fc03e4}} 
+\mbox{\hyperlink{classDPDKManager_a981c88b99a2c8d51376d9022f6fc03e4}{$\sim$\+DPDKManager}} ()
+\begin{DoxyCompactList}\small\item\em 析构函数,释放mbuf池资源 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classDPDKManager_a8f7c6d4cc770d8e5e091db717efce2cc}\label{classDPDKManager_a8f7c6d4cc770d8e5e091db717efce2cc}} 
+rte\+\_\+mempool $\ast$ \mbox{\hyperlink{classDPDKManager_a8f7c6d4cc770d8e5e091db717efce2cc}{get\+Mbuf\+Pool}} () const
+\begin{DoxyCompactList}\small\item\em 获取mbuf池的const指针 \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classDPDKManager_a2c9466ca3f492b06d99a15c6f6d320ca}{init\+Port}} (int port\+ID, rte\+\_\+eth\+\_\+conf port\+\_\+conf\+\_\+default)
+\begin{DoxyCompactList}\small\item\em 初始化\+DPDK端口 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classDPDKManager_a28b31b1dcd2c5ba282ac5a3937d057ea}\label{classDPDKManager_a28b31b1dcd2c5ba282ac5a3937d057ea}} 
+struct rte\+\_\+kni $\ast$ {\bfseries alloc\+Kni} (int port\+ID)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classDPDKManager_a4b560fe44f679713a58d607716ecbc61}\label{classDPDKManager_a4b560fe44f679713a58d607716ecbc61}} 
+static int {\bfseries config\+Network\+If} (uint16\+\_\+t port\+Id, uint8\+\_\+t if\+Up)
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+DPDKManager类用于管理\+DPDK相关资源,主要是一个\+DPDK内存池,还有一些参数例如内存池名称，内存池内部的mbuf数量和socket ID等 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classDPDKManager_aead1cd0c51880a5d67e291c075699885}\label{classDPDKManager_aead1cd0c51880a5d67e291c075699885}} 
+\index{DPDKManager@{DPDKManager}!DPDKManager@{DPDKManager}}
+\index{DPDKManager@{DPDKManager}!DPDKManager@{DPDKManager}}
+\doxysubsubsection{\texorpdfstring{DPDKManager()}{DPDKManager()}}
+{\footnotesize\ttfamily DPDKManager\+::\+DPDKManager (\begin{DoxyParamCaption}\item[{const string \&}]{name,  }\item[{unsigned}]{NUM\+\_\+\+MBUFS,  }\item[{int}]{socket\+\_\+id }\end{DoxyParamCaption})}
+
+
+
+默认构造函数, 创建一个\+DPDKManager对象,同时初始化一个mbuf池 
+
+
+\begin{DoxyParams}{Parameters}
+{\em name} & 内存池名称 \\
+\hline
+{\em NUM\+\_\+\+MBUFS} & 内存池中mbuf的数量 \\
+\hline
+{\em socket\+\_\+id} & 绑定的socket ID \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+DPDKManager对象 
+\end{DoxyReturn}
+
+\begin{DoxyExceptions}{Exceptions}
+{\em 如果mbuf池创建失败,则直接退出程序} & \\
+\hline
+\end{DoxyExceptions}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classDPDKManager_a2c9466ca3f492b06d99a15c6f6d320ca}\label{classDPDKManager_a2c9466ca3f492b06d99a15c6f6d320ca}} 
+\index{DPDKManager@{DPDKManager}!initPort@{initPort}}
+\index{initPort@{initPort}!DPDKManager@{DPDKManager}}
+\doxysubsubsection{\texorpdfstring{initPort()}{initPort()}}
+{\footnotesize\ttfamily int DPDKManager\+::init\+Port (\begin{DoxyParamCaption}\item[{int}]{port\+ID,  }\item[{rte\+\_\+eth\+\_\+conf}]{port\+\_\+conf\+\_\+default }\end{DoxyParamCaption})}
+
+
+
+初始化\+DPDK端口 
+
+
+\begin{DoxyParams}{Parameters}
+{\em port\+ID} & 端口\+ID \\
+\hline
+{\em port\+\_\+conf\+\_\+default} & 端口配置 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+成功时返回0,失败时直接退出程序 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Dpdk\+Manager.\+hpp\item 
+src/Dpdk\+Manager.\+cpp\end{DoxyCompactItemize}

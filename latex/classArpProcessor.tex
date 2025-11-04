@@ -1,0 +1,85 @@
+\hypertarget{classArpProcessor}{}\doxysection{Arp\+Processor Class Reference}
+\label{classArpProcessor}\index{ArpProcessor@{ArpProcessor}}
+
+
+Inheritance diagram for Arp\+Processor\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=160pt]{classArpProcessor__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Arp\+Processor\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=160pt]{classArpProcessor__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classArpProcessor_ab3e95e6b92e76df9da28d2b0a82d7aba}\label{classArpProcessor_ab3e95e6b92e76df9da28d2b0a82d7aba}} 
+struct rte\+\_\+mbuf $\ast$ {\bfseries send\+Arp\+Packet} (struct rte\+\_\+mempool $\ast$mbuf\+\_\+pool, uint16\+\_\+t opcode, uint8\+\_\+t $\ast$src\+Mac, uint32\+\_\+t src\+Ip, uint8\+\_\+t $\ast$dst\+Mac, uint32\+\_\+t dst\+Ip)
+\item 
+\mbox{\Hypertarget{classArpProcessor_ab47cdbe046adba7aaaba5a3720daa901}\label{classArpProcessor_ab47cdbe046adba7aaaba5a3720daa901}} 
+int {\bfseries handle\+Packet} (struct rte\+\_\+mempool $\ast$mbuf\+Pool, struct rte\+\_\+mbuf $\ast$mbufs, struct \mbox{\hyperlink{structinout__ring}{inout\+\_\+ring}} $\ast$ring)
+\item 
+\mbox{\Hypertarget{classArpProcessor_a725f32bfc211c42bbe45547afa8d70a8}\label{classArpProcessor_a725f32bfc211c42bbe45547afa8d70a8}} 
+void {\bfseries get\+Default\+Arp\+Mac} (uint8\+\_\+t $\ast$copy)
+\item 
+int \mbox{\hyperlink{classArpProcessor_a90f8d72166b5083e3e96daebae66e20b}{encode\+Arp\+Packet}} (uint8\+\_\+t $\ast$msg, uint16\+\_\+t opcode, uint8\+\_\+t $\ast$src\+Mac, uint32\+\_\+t src\+Ip, uint8\+\_\+t $\ast$dst\+Mac, uint32\+\_\+t dst\+Ip)
+\begin{DoxyCompactList}\small\item\em 编码arp包到msg中 \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classArpProcessor_a4b7c0cbfc2d227f85b31ecdfc9653484}\label{classArpProcessor_a4b7c0cbfc2d227f85b31ecdfc9653484}} 
+static \mbox{\hyperlink{classArpProcessor}{Arp\+Processor}} \& {\bfseries get\+Instance} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classArpProcessor_adb08508b4d434e59055e6e4bc01c0355}\label{classArpProcessor_adb08508b4d434e59055e6e4bc01c0355}} 
+int {\bfseries set\+Next\+Processor} (std\+::shared\+\_\+ptr$<$ \mbox{\hyperlink{classProcessor}{Processor}} $>$ next\+Processor) override
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classArpProcessor_a90f8d72166b5083e3e96daebae66e20b}\label{classArpProcessor_a90f8d72166b5083e3e96daebae66e20b}} 
+\index{ArpProcessor@{ArpProcessor}!encodeArpPacket@{encodeArpPacket}}
+\index{encodeArpPacket@{encodeArpPacket}!ArpProcessor@{ArpProcessor}}
+\doxysubsubsection{\texorpdfstring{encodeArpPacket()}{encodeArpPacket()}}
+{\footnotesize\ttfamily int Arp\+Processor\+::encode\+Arp\+Packet (\begin{DoxyParamCaption}\item[{uint8\+\_\+t $\ast$}]{msg,  }\item[{uint16\+\_\+t}]{opcode,  }\item[{uint8\+\_\+t $\ast$}]{src\+Mac,  }\item[{uint32\+\_\+t}]{src\+Ip,  }\item[{uint8\+\_\+t $\ast$}]{dst\+Mac,  }\item[{uint32\+\_\+t}]{dst\+Ip }\end{DoxyParamCaption})}
+
+
+
+编码arp包到msg中 
+
+
+\begin{DoxyParams}{Parameters}
+{\em msg} & 指向要编码的缓冲区 \\
+\hline
+{\em opcode} & arp操作码,如\+ARP请求或\+ARP应答 \\
+\hline
+{\em src\+Mac} & 源\+MAC地址 \\
+\hline
+{\em src\+Ip} & 源\+IP地址 \\
+\hline
+{\em dst\+Mac} & 目标\+MAC地址 \\
+\hline
+{\em dst\+Ip} & 目标\+IP地址 \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+成功时返回0 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Arp\+Processor.\+hpp\item 
+src/Arp\+Processor.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,68 @@
+\hypertarget{classUdpServerManager}{}\doxysection{Udp\+Server\+Manager Class Reference}
+\label{classUdpServerManager}\index{UdpServerManager@{UdpServerManager}}
+
+
+Inheritance diagram for Udp\+Server\+Manager\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=190pt]{classUdpServerManager__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Udp\+Server\+Manager\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=190pt]{classUdpServerManager__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a9d1e221a3374dcea4ce257629aad6e27}\label{classUdpServerManager_a9d1e221a3374dcea4ce257629aad6e27}} 
+struct \mbox{\hyperlink{structUdpHost}{Udp\+Host}} $\ast$ {\bfseries get\+Host\+Info\+From\+Ip\+And\+Port} (uint32\+\_\+t dip, uint16\+\_\+t port, uint8\+\_\+t proto)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a9a2b70ffb7cf457052795f88865f9c88}\label{classUdpServerManager_a9a2b70ffb7cf457052795f88865f9c88}} 
+int {\bfseries nsocket} (\+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int domain, int type, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int protocol)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a2e8fa6d87043937ce908ab287f77fcb5}\label{classUdpServerManager_a2e8fa6d87043937ce908ab287f77fcb5}} 
+int {\bfseries nbind} (int sockfd, const struct sockaddr $\ast$addr, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) socklen\+\_\+t addrlen)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a6a1ecb73a0c8724a937c1c40c808f756}\label{classUdpServerManager_a6a1ecb73a0c8724a937c1c40c808f756}} 
+ssize\+\_\+t {\bfseries nrecvfrom} (int sockfd, void $\ast$buf, size\+\_\+t len, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int flags, struct sockaddr $\ast$src\+\_\+addr, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) socklen\+\_\+t $\ast$addrlen)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a1de2e01b463388a6ea9086627200b89f}\label{classUdpServerManager_a1de2e01b463388a6ea9086627200b89f}} 
+ssize\+\_\+t {\bfseries nsendto} (int sockfd, const void $\ast$buf, size\+\_\+t len, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) int flags, const struct sockaddr $\ast$dest\+\_\+addr, \+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) socklen\+\_\+t addrlen)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_adea91834b1958e2105510319832303c2}\label{classUdpServerManager_adea91834b1958e2105510319832303c2}} 
+int {\bfseries nclose} (int fd)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a518a2ca87aff1b358703c5cc3241078b}\label{classUdpServerManager_a518a2ca87aff1b358703c5cc3241078b}} 
+int {\bfseries udp\+Server} (\+\_\+\+\_\+attribute\+\_\+\+\_\+((unused)) void $\ast$arg)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a24cd4601dac9ee5a6fb4d8a3bf1411b5}\label{classUdpServerManager_a24cd4601dac9ee5a6fb4d8a3bf1411b5}} 
+std\+::list$<$ \mbox{\hyperlink{structUdpHost}{Udp\+Host}} $\ast$ $>$ \& {\bfseries get\+Udp\+Host\+List} ()
+\item 
+\mbox{\Hypertarget{classUdpServerManager_adf2a3e9f4369deb7a12d56ebea43d8b0}\label{classUdpServerManager_adf2a3e9f4369deb7a12d56ebea43d8b0}} 
+\mbox{\hyperlink{structUdpHost}{Udp\+Host}} $\ast$ {\bfseries get\+Host\+Info\+From\+Fd} (int fd)
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a857115b0329243c8de4b38538eae70bc}\label{classUdpServerManager_a857115b0329243c8de4b38538eae70bc}} 
+int {\bfseries remove\+Host} (\mbox{\hyperlink{structUdpHost}{Udp\+Host}} $\ast$host)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classUdpServerManager_a77cc1722beca0a71321ff5000201fd4b}\label{classUdpServerManager_a77cc1722beca0a71321ff5000201fd4b}} 
+static \mbox{\hyperlink{classUdpServerManager}{Udp\+Server\+Manager}} \& {\bfseries get\+Instance} ()
+\end{DoxyCompactItemize}
+\doxysubsection*{Additional Inherited Members}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Udp\+Host.\+hpp\item 
+src/Udp\+Host.\+cpp\end{DoxyCompactItemize}

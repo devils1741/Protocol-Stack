@@ -1,0 +1,37 @@
+\hypertarget{structUdpHost}{}\doxysection{Udp\+Host Struct Reference}
+\label{structUdpHost}\index{UdpHost@{UdpHost}}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{structUdpHost_af96a7c83a259ac910641948369721445}\label{structUdpHost_af96a7c83a259ac910641948369721445}} 
+int \mbox{\hyperlink{structUdpHost_af96a7c83a259ac910641948369721445}{fd}}
+\begin{DoxyCompactList}\small\item\em 文件描述符 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a00a1dee7b46cc3548ddedfdd65479928}\label{structUdpHost_a00a1dee7b46cc3548ddedfdd65479928}} 
+uint32\+\_\+t \mbox{\hyperlink{structUdpHost_a00a1dee7b46cc3548ddedfdd65479928}{local\+Ip}}
+\begin{DoxyCompactList}\small\item\em 本地\+IP地址 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a2d296edc1fe1002f13c4d31954bd53c7}\label{structUdpHost_a2d296edc1fe1002f13c4d31954bd53c7}} 
+uint8\+\_\+t \mbox{\hyperlink{structUdpHost_a2d296edc1fe1002f13c4d31954bd53c7}{local\+Mac}} \mbox{[}RTE\+\_\+\+ETHER\+\_\+\+ADDR\+\_\+\+LEN\mbox{]}
+\begin{DoxyCompactList}\small\item\em 本地\+MAC地址 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a762ea70919caf94fab6f79227588c09a}\label{structUdpHost_a762ea70919caf94fab6f79227588c09a}} 
+uint16\+\_\+t \mbox{\hyperlink{structUdpHost_a762ea70919caf94fab6f79227588c09a}{localport}}
+\begin{DoxyCompactList}\small\item\em 本地端口 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a61ba0f218909bd3e0dec43cd36f92edf}\label{structUdpHost_a61ba0f218909bd3e0dec43cd36f92edf}} 
+uint8\+\_\+t \mbox{\hyperlink{structUdpHost_a61ba0f218909bd3e0dec43cd36f92edf}{protocal}}
+\begin{DoxyCompactList}\small\item\em 协议类型 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_ac327e5b5d7ba19701a1e35a8efd9ac36}\label{structUdpHost_ac327e5b5d7ba19701a1e35a8efd9ac36}} 
+struct rte\+\_\+ring $\ast$ \mbox{\hyperlink{structUdpHost_ac327e5b5d7ba19701a1e35a8efd9ac36}{sndbuf}}
+\begin{DoxyCompactList}\small\item\em 发送缓冲区 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a438fc77ddfccf66da233812648f16507}\label{structUdpHost_a438fc77ddfccf66da233812648f16507}} 
+struct rte\+\_\+ring $\ast$ \mbox{\hyperlink{structUdpHost_a438fc77ddfccf66da233812648f16507}{rcvbuf}}
+\begin{DoxyCompactList}\small\item\em 接收缓冲区 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_a6e43f1a4bd9fde38506e4fd9a39357ca}\label{structUdpHost_a6e43f1a4bd9fde38506e4fd9a39357ca}} 
+pthread\+\_\+cond\+\_\+t \mbox{\hyperlink{structUdpHost_a6e43f1a4bd9fde38506e4fd9a39357ca}{cond}}
+\begin{DoxyCompactList}\small\item\em 条件变量，用于线程间同步 \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{structUdpHost_ab71db3d30b3bc4d0b6e9acf018e87432}\label{structUdpHost_ab71db3d30b3bc4d0b6e9acf018e87432}} 
+pthread\+\_\+mutex\+\_\+t \mbox{\hyperlink{structUdpHost_ab71db3d30b3bc4d0b6e9acf018e87432}{mutex}}
+\begin{DoxyCompactList}\small\item\em 互斥锁，用于保护条件变量 \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+The documentation for this struct was generated from the following file\+:\begin{DoxyCompactItemize}
+\item 
+include/Udp\+Host.\+hpp\end{DoxyCompactItemize}

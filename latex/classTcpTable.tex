@@ -1,0 +1,50 @@
+\hypertarget{classTcpTable}{}\doxysection{Tcp\+Table Class Reference}
+\label{classTcpTable}\index{TcpTable@{TcpTable}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTcpTable_ac04af997d30708df4cb43e6bd273d50a}\label{classTcpTable_ac04af997d30708df4cb43e6bd273d50a}} 
+\mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ {\bfseries get\+Tcp\+Stream\+By\+Fd} (int fd)
+\item 
+\mbox{\Hypertarget{classTcpTable_a3e7ba243067aa9d5ad73a059ae677c06}\label{classTcpTable_a3e7ba243067aa9d5ad73a059ae677c06}} 
+int {\bfseries add\+Tcp\+Stream} (\mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ts)
+\item 
+\mbox{\Hypertarget{classTcpTable_ab81df9152b299a7a476499d4e9964683}\label{classTcpTable_ab81df9152b299a7a476499d4e9964683}} 
+\mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ {\bfseries get\+Tcp\+Stream\+By\+Port} (uint16\+\_\+t port)
+\item 
+\mbox{\Hypertarget{classTcpTable_aa1a8555dcc5a371efc10781f7aa32b19}\label{classTcpTable_aa1a8555dcc5a371efc10781f7aa32b19}} 
+\mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ {\bfseries get\+Tcp\+Stream} (uint32\+\_\+t sip, uint32\+\_\+t dip, uint16\+\_\+t sport, uint16\+\_\+t dport)
+\item 
+\mbox{\Hypertarget{classTcpTable_a4f891060214a22616dbc17dbbce8a8f2}\label{classTcpTable_a4f891060214a22616dbc17dbbce8a8f2}} 
+struct \mbox{\hyperlink{structevent__poll}{event\+\_\+poll}} $\ast$ {\bfseries get\+Epoll} ()
+\item 
+\mbox{\Hypertarget{classTcpTable_a4a40eb67eac8f79bc5f2b4424b878025}\label{classTcpTable_a4a40eb67eac8f79bc5f2b4424b878025}} 
+int {\bfseries remove\+Stream} (\mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ts)
+\item 
+\mbox{\Hypertarget{classTcpTable_ab3491d952028d3d5b8db5f8dd79e873c}\label{classTcpTable_ab3491d952028d3d5b8db5f8dd79e873c}} 
+std\+::list$<$ \mbox{\hyperlink{structTcpStream}{Tcp\+Stream}} $\ast$ $>$ {\bfseries get\+Tcp\+Stream\+List} ()
+\item 
+\mbox{\Hypertarget{classTcpTable_a8357644a5b0d9dc549db680080157fdb}\label{classTcpTable_a8357644a5b0d9dc549db680080157fdb}} 
+int {\bfseries get\+Count} () const
+\item 
+\mbox{\Hypertarget{classTcpTable_a3b27623659e6aa7632d2b4c0dba8d6c7}\label{classTcpTable_a3b27623659e6aa7632d2b4c0dba8d6c7}} 
+struct \mbox{\hyperlink{structevent__poll}{event\+\_\+poll}} $\ast$ {\bfseries get\+Epoll\+Byfd} (int epfd)
+\item 
+\mbox{\Hypertarget{classTcpTable_a478f73b0e8a81979f281e2a850615762}\label{classTcpTable_a478f73b0e8a81979f281e2a850615762}} 
+void {\bfseries debug} ()
+\item 
+\mbox{\Hypertarget{classTcpTable_aac25a2b7dc49bb48e9ca32dc64b7fbfe}\label{classTcpTable_aac25a2b7dc49bb48e9ca32dc64b7fbfe}} 
+void {\bfseries set\+Epoll} (struct \mbox{\hyperlink{structevent__poll}{event\+\_\+poll}} $\ast$ep)
+\end{DoxyCompactItemize}
+\doxysubsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTcpTable_aee4c35bd3b541efe2be32dff65633254}\label{classTcpTable_aee4c35bd3b541efe2be32dff65633254}} 
+static \mbox{\hyperlink{classTcpTable}{Tcp\+Table}} \& {\bfseries get\+Instance} ()
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+include/Tcp\+Host.\+hpp\item 
+src/Tcp\+Host.\+cpp\end{DoxyCompactItemize}
